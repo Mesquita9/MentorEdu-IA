@@ -4,50 +4,74 @@ import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# 1. TEMA E CSS (CORREÇÃO DAS CAIXAS BRANCAS)
+# 1. ESTILO BLINDADO (FORÇA TEXTO BRANCO E FUNDO ESCURO)
 st.set_page_config(page_title="MentorEdu", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #0e1117; color: white; }
-    /* Resolve as caixas brancas invisíveis */
-    div[data-baseweb="select"] > div, div[data-testid="stFileUploader"] section {
+    /* Fundo principal e texto */
+    .stApp { background-color: #0e1117 !important; color: #ffffff !important; }
+    
+    /* Força cor de todos os textos, parágrafos e spans */
+    p, span, label, .stMarkdown, [data-testid="stWidgetLabel"] p {
+        color: #ffffff !important;
+    }
+
+    /* Resolve caixas de input brancas/invisíveis */
+    div[data-baseweb="select"] > div, 
+    div[data-testid="stFileUploader"] section {
         background-color: #1c2128 !important;
         border: 1px solid #30363d !important;
-        color: white !important;
+        color: #ffffff !important;
     }
-    div[data-baseweb="select"] span, label p { color: white !important; }
-    /* Ajuste das mensagens de chat */
-    [data-testid="stChatMessage"] { background-color: #1c2128 !important; border-radius: 10px; }
+    
+    /* Balões de Chat */
+    [data-testid="stChatMessage"] {
+        background-color: #1c2128 !important;
+        border: 1px solid #3b424b !important;
+        color: #ffffff !important;
+    }
+
+    /* Título */
+    .main-header { color: #00d4ff; text-align: center; font-size: 2.5rem; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. INICIALIZAÇÃO DA IA
+# 2. CARREGAMENTO DOS MOTORES
 @st.cache_resource
-def load_models():
+def setup_ia():
     try:
-        key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
-        return Groq(api_key=key), SentenceTransformer("all-MiniLM-L6-v2")
-    except: return None, None
+        # Puxa a chave dos Secrets ou do ambiente
+        api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+        client = Groq(api_key=api_key)
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+        return client, model
+    except Exception:
+        return None, None
 
-client, model = load_models()
+client, model = setup_ia()
 
-# 3. BARRA LATERAL (CONFIGURAÇÃO)
+# 3. BARRA LATERAL
 with st.sidebar:
+    # Carrega logo se existir no repositório
     if os.path.exists("logo.png"):
         st.image("logo.png", width=120)
-    st.title("MentorEdu")
     
-    # Personalidades conforme sua regra (Inércia Zero removido)
-    modo = st.selectbox("QUEM É O RICK?", ["Rick Acadêmico", "Rick Sarcástico"])
-    up = st.file_uploader("📂 BASE PDF", type="pdf")
+    st.markdown("### 🧪 MENU DO RICK")
     
-    if st.button("LIMPAR CONVERSA"):
+    # Personalidades conforme sua última instrução
+    modo = st.selectbox("PERSONALIDADE:", ["Rick Acadêmico", "Rick Sarcástico"])
+    
+    up = st.file_uploader("📂 SUBIR PDF (BASE)", type="pdf")
+    
+    if st.button("LIMPAR SISTEMA"):
         st.session_state.chat = []
         st.rerun()
 
-# 4. LÓGICA DE MEMÓRIA E PDF
-if "chat" not in st.session_state: st.session_state.chat = []
+# 4. PROCESSAMENTO DE DADOS (MEMÓRIA)
+if "chat" not in st.session_state:
+    st.session_state.chat = []
+
 chunks, pgs = [], []
 
 if up and model:
@@ -57,49 +81,59 @@ if up and model:
                 txt = p.extract_text()
                 if txt:
                     for lin in txt.split('\n'):
-                        if len(lin.strip()) > 40:
+                        if len(lin.strip()) > 35:
                             chunks.append(lin.strip())
-                            pgs.append(i+1)
+                            pgs.append(i + 1)
         if chunks:
             embs = model.encode(chunks)
             idx = faiss.IndexFlatL2(embs.shape[1])
             idx.add(np.array(embs))
-    except: st.error("Erro ao ler o arquivo PDF.")
+    except Exception:
+        st.error("Erro ao ler o PDF. Verifique se o arquivo não está protegido.")
 
-# 5. INTERFACE DE CHAT
-st.markdown("<h1 style='text-align: center; color: #00d4ff;'>MentorEdu</h1>", unsafe_allow_html=True)
+# 5. ÁREA DE INTERAÇÃO
+st.markdown('<p class="main-header">MentorEdu</p>', unsafe_allow_html=True)
 
+# Mostra histórico
 for m in st.session_state.chat:
     with st.chat_message(m["role"]):
         st.write(m["content"])
 
-if prompt := st.chat_input("Diz aí, Morty..."):
-    st.session_state.chat.append({"role": "user", "content": prompt})
+# Entrada do usuário
+if p := st.chat_input("Diz aí, Morty..."):
+    st.session_state.chat.append({"role": "user", "content": p})
     with st.chat_message("user"):
-        st.write(prompt)
+        st.write(p)
 
     with st.chat_message("assistant"):
-        contexto = ""
-        if up and chunks:
+        ctx = ""
+        # Busca no PDF se houver um
+        if up and chunks and model:
             try:
-                q_emb = model.encode([prompt])
-                D, I = idx.search(np.array(q_emb), k=2)
-                for i in I[0]: contexto += f"(Pág {pgs[i]}) {chunks[i]}\n\n"
-            except: pass
+                D, I = idx.search(np.array(model.encode([p])), k=2)
+                for i in I[0]:
+                    ctx += f"[Pág {pgs[i]}] {chunks[i]}\n\n"
+            except:
+                pass
 
-        p_sys = {
-            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Formal, focado em ABNT e ciência.",
-            "Rick Sarcástico": "Você é o Rick Sanchez. Sarcástico, genial e impaciente."
+        # Configuração das personas
+        prompts = {
+            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Fale de forma acadêmica, técnica e cite normas da ABNT.",
+            "Rick Sarcástico": "Você é o Rick Sanchez. Use sarcasmo, chame o usuário de Morty e seja impaciente, mas responda."
         }
 
         try:
-            final_p = f"Contexto: {contexto}\n\nPergunta: {prompt}" if contexto else prompt
-            res = client.chat.completions.create(
+            prompt_final = f"Contexto do PDF:\n{ctx}\n\nPergunta do Morty: {p}" if ctx else p
+            
+            chamada = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
-                messages=[{"role": "system", "content": p_sys[modo]}, {"role": "user", "content": final_p}]
+                messages=[
+                    {"role": "system", "content": prompts[modo]},
+                    {"role": "user", "content": prompt_final}
+                ]
             )
-            resp = res.choices[0].message.content
+            resp = chamada.choices[0].message.content
             st.write(resp)
             st.session_state.chat.append({"role": "assistant", "content": resp})
-        except:
-            st.error("Erro na API Groq! Verifique sua chave.")
+        except Exception:
+            st.error("Erro na comunicação com a Groq. Verifique sua API Key!")
