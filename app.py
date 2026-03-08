@@ -30,6 +30,7 @@ client, model = load_resources()
 
 # --- BARRA LATERAL ---
 with st.sidebar:
+    # Usando o Rick que você subiu
     if os.path.exists("logo.png"):
         st.image("logo.png", width=150)
     
@@ -56,9 +57,9 @@ if uploaded_file:
             for i, page in enumerate(pdf.pages):
                 text = page.extract_text()
                 if text:
-                    for line in text.split('\n'):
-                        if len(line.strip()) > 50:
-                            chunks.append(line.strip())
+                    for linha in text.split('\n'):
+                        if len(linha.strip()) > 50:
+                            chunks.append(linha.strip())
                             paginas.append(i + 1)
         if chunks:
             embeddings = model.encode(chunks)
@@ -67,4 +68,27 @@ if uploaded_file:
 
 # --- Interface de Chat ---
 st.markdown('<h1 class="main-title">MentorEdu</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Projeto Inércia Zero - Escolha sua realidade</p>', unsafe_allow_html
+st.markdown('<p class="subtitle">Projeto Inércia Zero - Escolha sua realidade</p>', unsafe_allow_html=True)
+
+if "mensagens" not in st.session_state:
+    st.session_state.mensagens = []
+
+for msg in st.session_state.mensagens:
+    # Rick é logo.png, Morty é logo2.png
+    avatar = "logo2.png" if msg["role"] == "user" else "logo.png"
+    nome = "Morty" if msg["role"] == "user" else "Rick"
+    with st.chat_message(msg["role"], avatar=avatar):
+        st.markdown(f"**{nome}:** {msg['content']}")
+
+if prompt := st.chat_input("Fala logo, Morty..."):
+    st.session_state.mensagens.append({"role": "user", "content": prompt})
+    with st.chat_message("user", avatar="logo2.png"):
+        st.markdown(f"**Morty:** {prompt}")
+
+    with st.chat_message("assistant", avatar="logo.png"):
+        contexto = ""
+        if uploaded_file and chunks:
+            q_emb = model.encode([prompt])
+            D, I = index.search(np.array(q_emb), k=3)
+            for idx in I[0]:
+                contexto += f"[Página {paginas
