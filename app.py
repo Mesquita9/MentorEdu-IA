@@ -34,10 +34,6 @@ if uploaded_file:
         for i, page in enumerate(pdf.pages):
             page_text = page.extract_text()
             
-            # Debug opcional em expander
-            with st.expander(f"Debug: Página {i+1}"):
-                st.write(f"{len(page_text) if page_text else 0} caracteres")
-            
             if page_text:
                 # Divide em pedaços de 500 caracteres
                 partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
@@ -95,10 +91,6 @@ Pergunta:
 {pergunta}
 """
 
-        # Debug opcional do prompt
-        with st.expander("Debug: prompt enviado à IA"):
-            st.text_area("Prompt enviado à IA", prompt, height=300)
-
         try:
             # Chamada à API Groq
             resposta = client.chat.completions.create(
@@ -112,7 +104,7 @@ Pergunta:
 
             conteudo_resposta = resposta.choices[0].message.content
 
-            # Salvar resposta no histórico
+            # Salvar pergunta e resposta no histórico
             st.session_state.mensagens.append({"role": "user", "content": pergunta})
             st.session_state.mensagens.append({"role": "assistant", "content": conteudo_resposta})
 
