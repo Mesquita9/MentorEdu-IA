@@ -4,7 +4,7 @@ import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# 1. DESIGN DE ELITE (INTER + ALTO CONTRASTE)
+# 1. DESIGN DE ELITE (ALTO CONTRASTE PARA O IFCE)
 st.set_page_config(page_title="MentorEdu", page_icon="🧪", layout="wide")
 
 st.markdown("""
@@ -13,19 +13,32 @@ st.markdown("""
     html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
     .stApp { background-color: #0b1117; color: #f0f2f6; }
     
-    /* SIDEBAR TOTALMENTE LEGÍVEL */
-    [data-testid="stSidebar"] { background-color: #161b22 !important; border-right: 1px solid #30363d; }
-    [data-testid="stSidebar"] * { color: #ffffff !important; font-weight: bold !important; }
+    /* SIDEBAR: RESOLVENDO O PROBLEMA DE VISIBILIDADE */
+    [data-testid="stSidebar"] { 
+        background-color: #161b22 !important; 
+        border-right: 1px solid #30363d; 
+    }
+    /* Força todas as letras da esquerda a ficarem BRANCAS e grandes */
+    [data-testid="stSidebar"] * { 
+        color: #ffffff !important; 
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+    }
     [data-testid="stSidebar"] label { color: #ffffff !important; }
     
-    /* TÍTULO COM GRADIENTE MENTOREDU */
+    /* TÍTULO COM GRADIENTE */
     .title { text-align: center; background: linear-gradient(90deg, #00d4ff, #88e23b);
               -webkit-background-clip: text; -webkit-text-fill-color: transparent;
               font-weight: 800; font-size: 3.5rem; margin-top: -50px; }
 
-    /* BALÕES DE CHAT DARK MODE */
-    [data-testid="stChatMessage"] { background-color: #1e2530 !important; border-radius: 12px !important; border: 1px solid #30363d !important; }
-    [data-testid="stChatMessage"] p { color: #ffffff !important; font-size: 1.1rem !important; }
+    /* CHAT DARK MODE */
+    [data-testid="stChatMessage"] { 
+        background-color: #1e2530 !important; 
+        border-radius: 12px !important; 
+        border: 1px solid #30363d !important; 
+        margin-bottom: 10px;
+    }
+    [data-testid="stChatMessage"] p { color: #ffffff !important; }
     
     header, footer { visibility: hidden; }
     </style>
@@ -42,17 +55,17 @@ client, model = load_all()
 # 2. BARRA LATERAL (PROJETO INÉRCIA ZERO)
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=120)
-    st.markdown("### 🧪 PROJETO INÉRCIA ZERO")
-    modo = st.selectbox("PERSONALIDADE:", ["Rick Acadêmico", "Rick Inércia Zero", "Rick Sarcástico"])
-    up = st.file_uploader("📂 SUBIR PDF (BASE)", type="pdf")
-    if st.button("RESETAR SISTEMA"):
+    st.markdown("### 🧪 PAINEL DE CONTROLE")
+    modo = st.selectbox("PERSONALIDADE DO RICK:", ["Rick Acadêmico", "Rick Inércia Zero", "Rick Sarcástico"])
+    up = st.file_uploader("📂 SUBIR BASE (PDF)", type="pdf")
+    if st.button("LIMPAR SISTEMA"):
         st.session_state.mensagens = []
         st.rerun()
 
 # 3. LÓGICA RAG (CÉREBRO)
 chunks, pgs = [], []
 if up:
-    with st.spinner("Rick lendo PDF..."):
+    with st.spinner("Rick analisando PDF..."):
         with pdfplumber.open(up) as pdf:
             for i, p in enumerate(pdf.pages):
                 t = p.extract_text()
@@ -85,18 +98,6 @@ if prompt := st.chat_input("Diz aí, Morty..."):
             for idx in I[0]: ctx += f"[Pág {pgs[idx]}] {chunks[idx]}\n\n"
 
         p_sys = {
-            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Formal, ranzinza e focado em ABNT.",
-            "Rick Inércia Zero": "Você é agressivo. Grite para o Morty parar de procrastinar!",
-            "Rick Sarcástico": "Você é o Rick Sanchez clássico. Sarcástico e brilhante."
-        }
-        
-        try:
-            full = f"Contexto:\n{ctx}\n\nPergunta: {prompt}" if ctx else prompt
-            res = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[{"role":"system","content":p_sys[modo]},{"role":"user","content":full}]
-            )
-            ans = res.choices[0].message.content
-            st.markdown(f"**RICK:** {ans}")
-            st.session_state.mensagens.append({"role": "assistant", "content": ans})
-        except: st.error("Erro no portal!")
+            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Formal, ranzinza e focado em normas ABNT e ciência.",
+            "Rick Inércia Zero": "Você é agressivo e motivador. Grite para o Morty parar de procrastinar!",
+            "Rick S
