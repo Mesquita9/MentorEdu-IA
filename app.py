@@ -6,112 +6,118 @@ import faiss
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# 1. Configuração da Página (Título que aparece na aba do navegador)
-st.set_page_config(page_title="MentorEdu - IFCE", page_icon="🎓", layout="wide")
+# 1. Configuração da Página
+st.set_page_config(page_title="Inércia Zero - MentorEdu", page_icon="🧪", layout="wide")
 
-# 2. CSS para centralizar e estilizar o nome MentorEdu
+# 2. Estilização Rick and Morty / Inércia Zero
 st.markdown("""
     <style>
-    .titulo-principal {
+    .main-title {
         text-align: center;
-        color: #2f9e41; /* Verde do tema que você configurou */
-        font-family: 'sans serif';
-        font-weight: 800;
+        color: #97ce4c; /* Verde Portal */
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: 900;
         font-size: 3.5rem;
-        margin-bottom: -10px;
+        text-shadow: 2px 2px #44281d;
     }
-    .sub-titulo {
+    .subtitle {
         text-align: center;
-        color: #666;
+        color: #88e23b;
         font-size: 1.2rem;
         margin-bottom: 2rem;
+    }
+    /* Estilo para as mensagens */
+    .stChatMessage {
+        border-radius: 15px;
+        border: 2px solid #97ce4c;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- Carregamento de Recursos ---
+# --- Inicialização ---
 @st.cache_resource
-def carregar_ia():
+def load_resources():
     api_key = os.getenv("GROQ_API_KEY")
     client = Groq(api_key=api_key) if api_key else None
-    modelo = SentenceTransformer("all-MiniLM-L6-v2")
-    return client, modelo
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    return client, model
 
-client, modelo_embeddings = carregar_ia()
+client, model = load_resources()
 
-if not client:
-    st.error("Erro: Verifique a GROQ_API_KEY nas configurações do Streamlit Cloud.")
-    st.stop()
-
-# --- BARRA LATERAL (Logo e Upload) ---
+# --- BARRA LATERAL (Portal de Comando) ---
 with st.sidebar:
-    # Carrega sua logo.png que está no GitHub
-    if os.path.exists("logo.png"):
-        st.image("logo.png", use_container_width=True)
+    st.image("logo.png", width=150) # Rick na sidebar
+    st.markdown("### 🧪 Projeto Inércia Zero")
+    st.info("Morty, coloca o PDF aqui ou a gente nunca vai sair dessa dimensão acadêmica!")
+    uploaded_file = st.file_uploader("Subir PDF", type="pdf", label_visibility="collapsed")
     
-    st.markdown("---")
-    st.header("📚 Documentação")
-    uploaded_file = st.file_uploader("Carregar PDF para análise", type="pdf")
-    
-    if st.button("🗑️ Limpar Chat"):
+    if st.button("Explodir Histórico (Reset)"):
         st.session_state.mensagens = []
         st.rerun()
 
-# --- Processamento RAG (PDF) ---
+# --- Processamento RAG (Cérebro do Rick) ---
 chunks, paginas = [], []
 if uploaded_file:
-    with st.spinner("Lendo documento..."):
+    with st.spinner("Analisando... isso é ciência de verdade, Morty!"):
         with pdfplumber.open(uploaded_file) as pdf:
             for i, page in enumerate(pdf.pages):
-                texto = page.extract_text()
-                if texto:
-                    for linha in texto.split('\n'):
-                        if len(linha.strip()) > 50:
-                            chunks.append(linha.strip())
+                text = page.extract_text()
+                if text:
+                    for line in text.split('\n'):
+                        if len(line.strip()) > 50:
+                            chunks.append(line.strip())
                             paginas.append(i + 1)
-        
         if chunks:
-            embeddings = modelo_embeddings.encode(chunks)
+            embeddings = model.encode(chunks)
             index = faiss.IndexFlatL2(embeddings.shape[1])
             index.add(np.array(embeddings))
 
 # --- CORPO DO CHAT ---
-st.markdown('<h1 class="titulo-principal">MentorEdu</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-titulo">IA Acadêmica de Apoio ao IFCE</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-title">MentorEdu</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Dimensão: Projeto Inércia Zero</p>', unsafe_allow_html=True)
 
 if "mensagens" not in st.session_state:
     st.session_state.mensagens = []
 
-# Exibir histórico com interface moderna
+# Exibição das mensagens com as imagens que você subiu
 for msg in st.session_state.mensagens:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    if msg["role"] == "user":
+        with st.chat_message("user", avatar="logo2.png"): # Morty
+            st.markdown(f"**Morty:** {msg['content']}")
+    else:
+        with st.chat_message("assistant", avatar="logo.png"): # Rick
+            st.markdown(f"**Rick:** {msg['content']}")
 
-# Entrada de texto (Chat Input)
-if prompt := st.chat_input("Como posso ajudar na sua pesquisa?"):
+# Input de Chat
+if prompt := st.chat_input("Fala logo, Morty..."):
     st.session_state.mensagens.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    with st.chat_message("user", avatar="logo2.png"):
+        st.markdown(f"**Morty:** {prompt}")
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="logo.png"):
         contexto = ""
         if uploaded_file and chunks:
-            q_emb = modelo_embeddings.encode([prompt])
+            q_emb = model.encode([prompt])
             D, I = index.search(np.array(q_emb), k=3)
             for idx in I[0]:
-                contexto += f"[Pág {paginas[idx]}] {chunks[idx]}\n"
+                contexto += f"[Página {paginas[idx]}] {chunks[idx]}\n"
 
         try:
-            full_prompt = f"Contexto: {contexto}\n\nPergunta: {prompt}" if contexto else prompt
-            chat_completion = client.chat.completions.create(
+            full_prompt = f"Contexto do PDF:\n{contexto}\n\nPergunta do Morty: {prompt}" if contexto else prompt
+            response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
-                    {"role": "system", "content": "Você é a MentorEdu, uma IA acadêmica desenvolvida para o IFCE."},
+                    {"role": "system", "content": """
+                    Você é o Rick Sanchez. Você é o mentor do 'Projeto Inércia Zero'.
+                    Sua personalidade: Gênio, sarcástico, impaciente, usa 'Wubba Lubba Dub Dub' e chama o usuário de Morty.
+                    Se houver contexto de PDF, use-o para dar uma resposta cientificamente perfeita, mas com seu jeito grosso.
+                    Se não houver PDF, apenas responda como o Rick faria.
+                    """},
                     {"role": "user", "content": full_prompt}
                 ]
             )
-            resposta = chat_completion.choices[0].message.content
-            st.markdown(resposta)
-            st.session_state.mensagens.append({"role": "assistant", "content": resposta})
+            answer = response.choices[0].message.content
+            st.markdown(f"**Rick:** {answer}")
+            st.session_state.mensagens.append({"role": "assistant", "content": answer})
         except Exception as e:
-            st.error("Erro na comunicação com a MentorEdu.")
+            st.error("O portal deu erro, Morty! A culpa é sua!")
