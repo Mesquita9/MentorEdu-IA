@@ -3,6 +3,10 @@ import pdfplumber
 import os
 from groq import Groq
 
+if not os.getenv("GROQ_API_KEY"):
+    st.error("API KEY da Groq não encontrada.")
+    st.stop()
+
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 st.title("IA que conversa com PDF")
@@ -18,6 +22,10 @@ if uploaded_file is not None:
             page_text = page.extract_text()
             if page_text:
                 texto += page_text
+
+    if not texto:
+        st.error("Não foi possível extrair texto do PDF.")
+        st.stop()
 
     pergunta = st.text_input("Faça uma pergunta sobre o PDF")
 
@@ -38,8 +46,7 @@ Pergunta:
             messages=[
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500,
-            temperature=0.3
+            max_tokens=500
         )
 
         st.write(resposta.choices[0].message.content)
