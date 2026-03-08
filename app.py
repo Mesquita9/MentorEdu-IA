@@ -32,7 +32,10 @@ if uploaded_file:
         for i, page in enumerate(pdf.pages):
             page_text = page.extract_text()
             if page_text:
+                # dividir em pedaços de 500 caracteres
                 partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
+                # filtrar partes vazias ou muito pequenas
+                partes = [p for p in partes if len(p.strip()) > 20]
                 for p in partes:
                     chunks.append(p)
                     paginas.append(i + 1)
@@ -40,6 +43,8 @@ if uploaded_file:
     if len(chunks) == 0:
         st.error("Não foi possível extrair texto do PDF.")
         st.stop()
+
+    st.write(f"Texto extraído do PDF: {len(chunks)} trechos válidos.")
 
     # criar embeddings
     embeddings = modelo_embeddings.encode(chunks)
@@ -65,7 +70,7 @@ if uploaded_file:
             for i in I[0]:
                 contexto += f"(Página {paginas[i]}) {chunks[i]}\n"
 
-            contexto = contexto[:3000]
+            contexto = contexto[:3000]  # limitar tamanho
 
             prompt = f"""
 Use apenas o contexto abaixo para responder.
@@ -76,6 +81,9 @@ Contexto:
 Pergunta:
 {pergunta}
 """
+
+            # mostrar prompt para debug
+            st.text_area("Prompt enviado à IA", prompt, height=300)
 
             # chamada à API Groq
             resposta = client.chat.completions.create(
