@@ -4,57 +4,58 @@ import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# --- CONFIGURAÇÃO E ESTILO DARK ---
+# --- CONFIGURAÇÃO E ESTILO DARK (GEMINI STYLE) ---
 st.set_page_config(page_title="Inércia Zero", page_icon="🧪", layout="wide")
 
 st.markdown("""
     <style>
-    /* Fundo Escuro Total */
+    /* Fundo Escuro e Texto Claro */
     .stApp { background-color: #0e1117; color: #e0e0e0; }
     [data-testid="stSidebar"] { background-color: #161b22 !important; }
     
     /* Título MentorEdu */
     .main-title { text-align: center; color: #88e23b; font-weight: 800; font-size: 3rem; margin-top: -60px; }
     
-    /* Balões de Chat (Dark) */
+    /* Balões de Chat Estilizados */
     [data-testid="stChatMessage"] { background-color: #161b22 !important; border: 1px solid #30363d !important; border-radius: 12px; }
     
-    /* Barra de Texto (Fixa e Escura) */
+    /* Barra de Chat Escura e Fixa */
     .stChatInputContainer { background-color: #0e1117 !important; padding-bottom: 20px; }
-    .stChatInputContainer div { background-color: #21262d !important; border: 1px solid #30363d !important; color: white !important; }
+    .stChatInputContainer div { background-color: #21262d !important; border: 1px solid #444c56 !important; }
+    textarea { color: white !important; }
     
-    /* Esconder Lixo do Streamlit */
+    /* Remover elementos padrão do Streamlit */
     header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
 @st.cache_resource
-def init():
-    c = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    m = SentenceTransformer("all-MiniLM-L6-v2")
-    return c, m
+def init_models():
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    return client, model
 
-client, model = init()
+client, model = init_models()
 
-# --- SIDEBAR ---
+# --- BARRA LATERAL ---
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=120)
-    st.title("🧪 Painel")
-    var = st.selectbox("Variante:", ["Rick Sarcástico", "Rick Acadêmico", "Rick Inércia Zero"])
-    up = st.file_uploader("Subir PDF", type="pdf")
-    if st.button("Resetar"):
+    st.title("🧪 Painel de Controle")
+    variante = st.selectbox("Variante do Rick:", ["Rick Sarcástico", "Rick Acadêmico", "Rick Inércia Zero"])
+    pdf_file = st.file_uploader("📂 Subir PDF", type="pdf")
+    if st.button("Limpar Histórico"):
         st.session_state.mensagens = []
         st.rerun()
 
-# --- RAG (CÉREBRO) ---
+# --- PROCESSAMENTO DO PDF (RAG) ---
 chunks, pgs = [], []
-if up:
-    with st.spinner("Rick lendo..."):
-        with pdfplumber.open(up) as pdf:
+if pdf_file:
+    with st.spinner("Rick está lendo..."):
+        with pdfplumber.open(pdf_file) as pdf:
             for i, p in enumerate(pdf.pages):
-                t = p.extract_text()
-                if t:
-                    for l in t.split('\n'):
+                txt = p.extract_text()
+                if txt:
+                    for l in txt.split('\n'):
                         if len(l.strip()) > 50:
                             chunks.append(l.strip()); pgs.append(i+1)
         if chunks:
@@ -62,7 +63,7 @@ if up:
             index = faiss.IndexFlatL2(embs.shape[1])
             index.add(np.array(embs))
 
-# --- INTERFACE ---
+# --- INTERFACE DE CHAT ---
 st.markdown('<h1 class="main-title">MentorEdu</h1>', unsafe_allow_html=True)
 if "mensagens" not in st.session_state: st.session_state.mensagens = []
 
@@ -76,7 +77,24 @@ if prompt := st.chat_input("Diz aí, Morty..."):
 
     with st.chat_message("assistant", avatar="logo.png"):
         ctx = ""
-        if up and chunks:
+        if pdf_file and chunks:
             q_emb = model.encode([prompt])
             D, I = index.search(np.array(q_emb), k=2)
-            for idx in I[0]: ctx += f"[Pág {pgs[idx]}] {chunks[idx]}\
+            for idx in I[0]: ctx += f"[Pág {pgs[idx]}] {chunks[idx]}\n "
+
+        pers = {
+            "Rick Sarcástico": "Você é o Rick Sanchez. Sarcástico e genial.",
+            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Científico e ranzinza.",
+            "Rick Inércia Zero": "Você quer tirar o Morty da inércia com motivação agressiva."
+        }
+        
+        try:
+            full_p = f"Contexto: {ctx}\n\nPergunta: {prompt}" if ctx else prompt
+            res = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role":"system","content":pers[variante]},{"role":"user","content":full_p}]
+            )
+            ans = res.choices[0].message.content
+            st.markdown(ans)
+            st.session_state.mensagens.append({"role": "assistant", "content": ans})
+        except: st.error("O portal de IA falhou, Morty!")
