@@ -3,147 +3,115 @@ import pdfplumber
 import os
 import numpy as np
 import faiss
-import re
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# -------------------------------
-# Título do app
-st.markdown("## 🤖 IA Acadêmica com PDFs")
-st.markdown("---")
+# 1. Configuração da Página (Título que aparece na aba do navegador)
+st.set_page_config(page_title="MentorEdu - IFCE", page_icon="🎓", layout="wide")
 
-# -------------------------------
-# Verifica API Key
-api_key = os.getenv("GROQ_API_KEY")
-if not api_key:
-    st.error("GROQ_API_KEY não encontrada nas Secrets.")
+# 2. CSS para centralizar e estilizar o nome MentorEdu
+st.markdown("""
+    <style>
+    .titulo-principal {
+        text-align: center;
+        color: #2f9e41; /* Verde do tema que você configurou */
+        font-family: 'sans serif';
+        font-weight: 800;
+        font-size: 3.5rem;
+        margin-bottom: -10px;
+    }
+    .sub-titulo {
+        text-align: center;
+        color: #666;
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- Carregamento de Recursos ---
+@st.cache_resource
+def carregar_ia():
+    api_key = os.getenv("GROQ_API_KEY")
+    client = Groq(api_key=api_key) if api_key else None
+    modelo = SentenceTransformer("all-MiniLM-L6-v2")
+    return client, modelo
+
+client, modelo_embeddings = carregar_ia()
+
+if not client:
+    st.error("Erro: Verifique a GROQ_API_KEY nas configurações do Streamlit Cloud.")
     st.stop()
 
-client = Groq(api_key=api_key)
+# --- BARRA LATERAL (Logo e Upload) ---
+with st.sidebar:
+    # Carrega sua logo.png que está no GitHub
+    if os.path.exists("logo.png"):
+        st.image("logo.png", use_container_width=True)
+    
+    st.markdown("---")
+    st.header("📚 Documentação")
+    uploaded_file = st.file_uploader("Carregar PDF para análise", type="pdf")
+    
+    if st.button("🗑️ Limpar Chat"):
+        st.session_state.mensagens = []
+        st.rerun()
 
-# -------------------------------
-# Modelo de embeddings
-modelo_embeddings = SentenceTransformer("all-MiniLM-L6-v2")
-
-# -------------------------------
-# Determinar cores legíveis dependendo do tema
-theme_base = st.get_option("theme.base")  # 'light' ou 'dark'
-user_bg = "#cce5ff" if theme_base == "light" else "#005f87"
-ia_bg = "#e8e8e8" if theme_base == "light" else "#333333"
-text_color = "#000000" if theme_base == "light" else "#ffffff"
-
-# -------------------------------
-# Layout em colunas para minimalismo
-col1, col2 = st.columns([1, 4])
-
-chunks = []
-paginas = []
-topicos = []
-
-with col1:
-    # Upload de PDF opcional e escondido
-    with st.expander("📄 Carregar PDF (opcional)"):
-        uploaded_file = st.file_uploader("", type="pdf", label_visibility="collapsed")
-
-    if uploaded_file:
+# --- Processamento RAG (PDF) ---
+chunks, paginas = [], []
+if uploaded_file:
+    with st.spinner("Lendo documento..."):
         with pdfplumber.open(uploaded_file) as pdf:
             for i, page in enumerate(pdf.pages):
-                page_text = page.extract_text()
-                if page_text:
-                    # Extrair títulos como possíveis tópicos
-                    linhas = page_text.split("\n")
-                    for linha in linhas:
-                        linha_limpa = linha.strip()
-                        if len(linha_limpa) < 5:
-                            continue
-                        if re.match(r"^[A-ZÁÉÍÓÚ\s]{3,}", linha_limpa) or linha_limpa.endswith(":"):
-                            topico = linha_limpa
-                        else:
-                            topico = ""
-                        # Dividir texto em trechos
-                        partes = [linha_limpa[j:j+500] for j in range(0, len(linha_limpa), 500)]
-                        for p in partes:
-                            if len(p.strip()) > 50 and not re.search(r"https?://", p):
-                                chunks.append(p)
-                                paginas.append(i + 1)
-                                topicos.append(topico)
-
-        if len(chunks) > 0:
-            st.markdown(f"<small>{len(chunks)} trechos extraídos do PDF</small>", unsafe_allow_html=True)
-            # Criar embeddings
+                texto = page.extract_text()
+                if texto:
+                    for linha in texto.split('\n'):
+                        if len(linha.strip()) > 50:
+                            chunks.append(linha.strip())
+                            paginas.append(i + 1)
+        
+        if chunks:
             embeddings = modelo_embeddings.encode(chunks)
-            dimension = embeddings.shape[1]
-            index = faiss.IndexFlatL2(dimension)
+            index = faiss.IndexFlatL2(embeddings.shape[1])
             index.add(np.array(embeddings))
 
-# -------------------------------
-with col2:
-    # Inicializa histórico de chat
-    if "mensagens" not in st.session_state:
-        st.session_state.mensagens = []
+# --- CORPO DO CHAT ---
+st.markdown('<h1 class="titulo-principal">MentorEdu</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-titulo">IA Acadêmica de Apoio ao IFCE</p>', unsafe_allow_html=True)
 
-    # Input minimalista
-    pergunta = st.text_input("💬 Pergunta", placeholder="Digite sua pergunta aqui...")
+if "mensagens" not in st.session_state:
+    st.session_state.mensagens = []
 
-    if pergunta:
-        # Se PDF existe, busca contexto
-        if len(chunks) > 0:
-            pergunta_embedding = modelo_embeddings.encode([pergunta])
-            D, I = index.search(np.array(pergunta_embedding), k=5)
+# Exibir histórico com interface moderna
+for msg in st.session_state.mensagens:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-            contexto = ""
-            for i in I[0]:
-                topico_texto = f" (Tópico: {topicos[i]})" if topicos[i] else ""
-                contexto += f"(Página {paginas[i]}{topico_texto}) {chunks[i]}\n"
+# Entrada de texto (Chat Input)
+if prompt := st.chat_input("Como posso ajudar na sua pesquisa?"):
+    st.session_state.mensagens.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-            contexto = contexto[:3000]  # limitar tamanho
-
-            prompt = f"""
-Você é uma IA acadêmica que responde apenas com base no PDF abaixo.
-Se a pergunta não estiver no PDF, você pode responder normalmente.
-Sempre cite o número da página e o tópico se possível.
-Forneça respostas claras, concisas e acadêmicas.
-
-Contexto do PDF:
-{contexto}
-
-Pergunta:
-{pergunta}
-"""
-        else:
-            # Sem PDF, IA responde normalmente
-            prompt = pergunta
+    with st.chat_message("assistant"):
+        contexto = ""
+        if uploaded_file and chunks:
+            q_emb = modelo_embeddings.encode([prompt])
+            D, I = index.search(np.array(q_emb), k=3)
+            for idx in I[0]:
+                contexto += f"[Pág {paginas[idx]}] {chunks[idx]}\n"
 
         try:
-            resposta = client.chat.completions.create(
+            full_prompt = f"Contexto: {contexto}\n\nPergunta: {prompt}" if contexto else prompt
+            chat_completion = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
-                    {"role": "system", "content": "Você é uma IA acadêmica que pode usar PDFs como referência."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=400
+                    {"role": "system", "content": "Você é a MentorEdu, uma IA acadêmica desenvolvida para o IFCE."},
+                    {"role": "user", "content": full_prompt}
+                ]
             )
-
-            conteudo_resposta = resposta.choices[0].message.content
-
-            # Salvar pergunta e resposta no histórico
-            st.session_state.mensagens.append({"role": "user", "content": pergunta})
-            st.session_state.mensagens.append({"role": "assistant", "content": conteudo_resposta})
-
+            resposta = chat_completion.choices[0].message.content
+            st.markdown(resposta)
+            st.session_state.mensagens.append({"role": "assistant", "content": resposta})
         except Exception as e:
-            st.error("Erro na chamada da API")
-            st.code(str(e))
-
-    # -------------------------------
-    # Mostrar histórico do chat estilizado e legível
-    for msg in st.session_state.mensagens:
-        if msg["role"] == "user":
-            st.markdown(
-                f"<div style='background-color:{user_bg};padding:8px;margin:4px 0;border-radius:5px;color:{text_color}'><b>Você:</b> {msg['content']}</div>",
-                unsafe_allow_html=True
-            )
-        else:
-            st.markdown(
-                f"<div style='background-color:{ia_bg};padding:8px;margin:4px 0;border-radius:5px;color:{text_color}'><b>IA:</b> {msg['content']}</div>",
-                unsafe_allow_html=True
-            )
+            st.error("Erro na comunicação com a MentorEdu.")
