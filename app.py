@@ -4,13 +4,13 @@ import os
 import numpy as np
 import faiss
 import re
-
 from groq import Groq
 from sentence_transformers import SentenceTransformer
+import pandas as pd
 
 # -------------------------------
 # Título do app
-st.markdown("## 🤖 IA que conversa e consulta PDFs")
+st.markdown("## 🤖 IA Acadêmica com PDFs")
 st.markdown("---")
 
 # -------------------------------
@@ -32,6 +32,7 @@ col1, col2 = st.columns([1, 4])
 
 chunks = []
 paginas = []
+topicos = []
 
 with col1:
     # Upload de PDF opcional e escondido
@@ -43,16 +44,23 @@ with col1:
             for i, page in enumerate(pdf.pages):
                 page_text = page.extract_text()
                 if page_text:
-                    partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
-                    partes = [
-                        p for p in partes
-                        if len(p.strip()) > 50 and
-                           not re.search(r"https?://", p, re.IGNORECASE) and
-                           not re.search(r"Exercícios?|Questão|Capítulo", p, re.IGNORECASE)
-                    ]
-                    for p in partes:
-                        chunks.append(p)
-                        paginas.append(i + 1)
+                    # Extrair títulos como possíveis tópicos (linhas em maiúsculas ou terminando com ":")
+                    linhas = page_text.split("\n")
+                    for linha in linhas:
+                        linha_limpa = linha.strip()
+                        if len(linha_limpa) < 5:
+                            continue
+                        if re.match(r"^[A-ZÁÉÍÓÚ\s]{3,}", linha_limpa) or linha_limpa.endswith(":"):
+                            topico = linha_limpa
+                        else:
+                            topico = ""
+                        # Dividir texto em trechos
+                        partes = [linha_limpa[j:j+500] for j in range(0, len(linha_limpa), 500)]
+                        for p in partes:
+                            if len(p.strip()) > 50 and not re.search(r"https?://", p):
+                                chunks.append(p)
+                                paginas.append(i + 1)
+                                topicos.append(topico)
 
         if len(chunks) > 0:
             st.markdown(f"<small>{len(chunks)} trechos extraídos do PDF</small>", unsafe_allow_html=True)
@@ -72,21 +80,23 @@ with col2:
     pergunta = st.text_input("💬 Pergunta", placeholder="Digite sua pergunta aqui...")
 
     if pergunta:
-        # Se PDF existe, tenta usar contexto
+        # Se PDF existe, busca contexto
         if len(chunks) > 0:
             pergunta_embedding = modelo_embeddings.encode([pergunta])
             D, I = index.search(np.array(pergunta_embedding), k=5)
 
             contexto = ""
             for i in I[0]:
-                contexto += f"(Página {paginas[i]}) {chunks[i]}\n"
+                topico_texto = f" (Tópico: {topicos[i]})" if topicos[i] else ""
+                contexto += f"(Página {paginas[i]}{topico_texto}) {chunks[i]}\n"
 
             contexto = contexto[:3000]  # limitar tamanho
 
             prompt = f"""
-Você é uma IA que responde com base no PDF abaixo,
-mas se a pergunta não estiver no PDF, você pode responder normalmente.
-Não invente informações sobre o PDF.
+Você é uma IA acadêmica que responde apenas com base no PDF abaixo.
+Se a pergunta não estiver no PDF, você pode responder normalmente.
+Sempre cite o número da página e o tópico se possível.
+Forneça respostas claras, concisas e acadêmicas.
 
 Contexto do PDF:
 {contexto}
@@ -102,7 +112,7 @@ Pergunta:
             resposta = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
-                    {"role": "system", "content": "Você é uma IA conversacional que pode usar PDFs como contexto."},
+                    {"role": "system", "content": "Você é uma IA acadêmica que pode usar PDFs como referência."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=400
