@@ -4,7 +4,7 @@ import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# 1. DESIGN CORRIGIDO (ALTO CONTRASTE E VISIBILIDADE)
+# 1. DESIGN DE ALTO CONTRASTE (CORREÇÃO DAS CAIXAS BRANCAS)
 st.set_page_config(page_title="MentorEdu", page_icon="🧪", layout="wide")
 
 st.markdown("""
@@ -12,13 +12,13 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
     .stApp { background-color: #0e1117; color: #ffffff; font-family: 'Inter', sans-serif; }
 
-    /* SIDEBAR - TEXTO BRANCO E FUNDO ESCURO */
+    /* SIDEBAR - RESOLVENDO O VISUAL FANTASMA */
     [data-testid="stSidebar"] { background-color: #161b22 !important; border-right: 1px solid #30363d; }
-    [data-testid="stSidebar"] label, [data-testid="stSidebar"] p {
+    [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
         color: #ffffff !important; font-weight: 700 !important;
     }
 
-    /* CORREÇÃO DAS CAIXAS BRANCAS (SELECTBOX E UPLOADER) */
+    /* FIX PARA SELECTBOX E UPLOADER (FUNDO ESCURO + TEXTO BRANCO) */
     div[data-baseweb="select"] > div, div[data-testid="stFileUploader"] section {
         background-color: #1e2530 !important;
         border: 2px solid #3b424b !important;
@@ -50,21 +50,21 @@ client, model = load_engine()
 
 # 2. BARRA LATERAL (PERSONALIDADES ATUALIZADAS)
 with st.sidebar:
-    st.markdown("## 🧪 MENTOREDU")
-    st.markdown("---")
-    # Removido Inércia Zero, mantidos Académico e Sarcástico
-    modo = st.selectbox("ESTILO DO RICK:", ["Rick Académico", "Rick Sarcástico"])
+    if os.path.exists("logo.png"): st.image("logo.png", width=120)
+    st.markdown("### 🧪 MENTOREDU V1.5")
+    # Removido 'Inércia Zero' conforme solicitado
+    modo = st.selectbox("ESTILO DO RICK:", ["Rick Acadêmico", "Rick Sarcástico"])
     up = st.file_uploader("📂 SUBIR BASE (PDF)", type="pdf")
     if st.button("LIMPAR HISTÓRICO"):
         st.session_state.mensagens = []
         st.rerun()
 
-# 3. LÓGICA RAG
+# 3. LÓGICA DE MEMÓRIA E PDF
 if "mensagens" not in st.session_state: st.session_state.mensagens = []
 chunks, pgs = [], []
 
 if up and model:
-    with st.spinner("Rick a analisar o PDF..."):
+    with st.spinner("Rick analisando dados..."):
         with pdfplumber.open(up) as pdf:
             for i, p in enumerate(pdf.pages):
                 txt = p.extract_text()
@@ -77,14 +77,14 @@ if up and model:
             idx = faiss.IndexFlatL2(embs.shape[1])
             idx.add(np.array(embs))
 
-# 4. INTERFACE DE CHAT
+# 4. ÁREA DE CHAT
 st.markdown('<h1 class="main-title">MentorEdu</h1>', unsafe_allow_html=True)
 
 for m in st.session_state.mensagens:
     with st.chat_message(m["role"]):
         st.markdown(f"**{m['role'].upper()}:** {m['content']}")
 
-if prompt := st.chat_input("Pergunta ao Rick..."):
+if prompt := st.chat_input("Diz aí, Morty..."):
     st.session_state.mensagens.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(f"**MORTY:** {prompt}")
 
@@ -96,8 +96,8 @@ if prompt := st.chat_input("Pergunta ao Rick..."):
             for i in I[0]: ctx += f"[Pág {pgs[i]}] {chunks[i]}\n\n"
 
         p_sys = {
-            "Rick Académico": "Você é o Rick Reitor do IFCE. Focado em normas ABNT e rigor científico.",
-            "Rick Sarcástico": "Você é o Rick Sanchez clássico. Sarcástico, brilhante e impaciente."
+            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Focado em ABNT e ciência pura.",
+            "Rick Sarcástico": "Você é o Rick Sanchez clássico. Sarcástico e brilhante."
         }
 
         try:
@@ -109,4 +109,4 @@ if prompt := st.chat_input("Pergunta ao Rick..."):
             ans = res.choices[0].message.content
             st.markdown(f"**RICK:** {ans}")
             st.session_state.mensagens.append({"role": "assistant", "content": ans})
-        except: st.error("Erro na Groq!")
+        except: st.error("Erro no portal da Groq!")
