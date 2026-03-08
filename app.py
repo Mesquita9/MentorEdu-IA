@@ -9,11 +9,11 @@ from sentence_transformers import SentenceTransformer
 
 st.title("IA que conversa com PDF")
 
-# verificar API KEY
+# verificar API
 api_key = os.getenv("GROQ_API_KEY")
 
 if not api_key:
-    st.error("GROQ_API_KEY não encontrada nas Secrets do Streamlit.")
+    st.error("GROQ_API_KEY não encontrada nas Secrets.")
     st.stop()
 
 client = Groq(api_key=api_key)
@@ -25,22 +25,26 @@ uploaded_file = st.file_uploader("Envie um PDF", type="pdf")
 
 if uploaded_file:
 
-    texto = ""
+    chunks = []
+    paginas = []
 
-    # ler PDF
     with pdfplumber.open(uploaded_file) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                texto += page_text
 
-    if not texto:
+        for i, page in enumerate(pdf.pages):
+
+            page_text = page.extract_text()
+
+            if page_text:
+
+                partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
+
+                for p in partes:
+                    chunks.append(p)
+                    paginas.append(i + 1)
+
+    if len(chunks) == 0:
         st.error("Não foi possível extrair texto do PDF.")
         st.stop()
-
-    # dividir texto em pedaços
-    chunk_size = 500
-    chunks = [texto[i:i+chunk_size] for i in range(0, len(texto), chunk_size)]
 
     # criar embeddings
     embeddings = modelo_embeddings.encode(chunks)
@@ -48,6 +52,7 @@ if uploaded_file:
     dimension = embeddings.shape[1]
 
     index = faiss.IndexFlatL2(dimension)
+
     index.add(np.array(embeddings))
 
     pergunta = st.text_input("Faça uma pergunta sobre o PDF")
@@ -58,14 +63,13 @@ if uploaded_file:
 
             pergunta_embedding = modelo_embeddings.encode([pergunta])
 
-            D, I = index.search(np.array(pergunta_embedding), k=3)
+            D, I = index.search(np.array(pergunta_embedding), k=5)
 
             contexto = ""
 
             for i in I[0]:
-                contexto += chunks[i] + "\n"
+                contexto += f"(Página {paginas[i]}) {chunks[i]}\n"
 
-            # limitar tamanho
             contexto = contexto[:3000]
 
             prompt = f"""
@@ -90,5 +94,5 @@ Pergunta:
 
         except Exception as e:
 
-            st.error("Erro na chamada da API Groq")
+            st.error("Erro na chamada da API")
             st.code(str(e))
