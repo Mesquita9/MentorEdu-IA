@@ -1,88 +1,104 @@
 import streamlit as st
-import pdfplumber, os, faiss
+import pdfplumber
+import os
 import numpy as np
+import faiss
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# 1. Configuração e Estilo Dark
-st.set_page_config(page_title="Inércia Zero", page_icon="🧪", layout="wide")
+# 1. Configuração da Página
+st.set_page_config(page_title="Inércia Zero - MentorEdu", page_icon="🧪", layout="wide")
 
+# 2. CSS Estilo Dark Mode Refinado (Gemini/GPT Style)
 st.markdown("""
     <style>
-    .stApp { background-color: #0e1117; color: #e0e0e0; }
-    section[data-testid="stSidebar"] { background-color: #161b22 !important; }
-    .main-title { text-align: center; color: #88e23b; font-family: sans-serif; font-weight: 800; font-size: 3rem; }
-    [data-testid="stChatMessage"] { background-color: #21262d; border-radius: 12px; border: 1px solid #30363d; }
-    input { color: white !important; }
+    /* Fundo principal e Sidebar */
+    .stApp {
+        background-color: #0e1117;
+        color: #e0e0e0;
+    }
+    section[data-testid="stSidebar"] {
+        background-color: #161b22 !important;
+    }
+    
+    /* Título MentorEdu Neon */
+    .main-title {
+        text-align: center;
+        color: #88e23b; 
+        font-family: 'Inter', sans-serif;
+        font-weight: 800;
+        font-size: 3rem;
+        margin-top: -60px;
+    }
+    
+    /* Subtítulo */
+    .subtitle {
+        text-align: center;
+        color: #9eaab7;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Estilização dos Balões de Chat */
+    [data-testid="stChatMessage"] {
+        background-color: #161b22 !important;
+        border: 1px solid #30363d !important;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        padding: 15px;
+    }
+
+    /* Fixar e Estilizar a Barra de Texto (Input) */
+    .stChatInputContainer {
+        background-color: #0e1117 !important;
+        padding-bottom: 20px;
+    }
+    .stChatInputContainer > div {
+        background-color: #21262d !important;
+        border: 1px solid #30363d !important;
+        border-radius: 10px !important;
+    }
+    textarea {
+        color: #ffffff !important;
+    }
+
+    /* Esconder elementos desnecessários do Streamlit */
+    header { visibility: hidden; }
+    footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
+# --- Inicialização de Recursos ---
 @st.cache_resource
-def load_all():
-    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+def load_resources():
+    api_key = os.getenv("GROQ_API_KEY")
+    client = Groq(api_key=api_key) if api_key else None
     model = SentenceTransformer("all-MiniLM-L6-v2")
     return client, model
 
-client, model = load_all()
+client, model = load_resources()
 
-# 2. Sidebar
+# --- BARRA LATERAL (Painel de Controle) ---
 with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", width=150)
-    st.title("🧪 Inércia Zero")
-    var = st.selectbox("Variante do Rick:", ["Rick Sarcástico", "Rick Acadêmico", "Rick Inércia Zero"])
-    up = st.file_uploader("📂 PDF", type="pdf")
-    if st.button("Resetar"):
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=150) # Rick
+    
+    st.markdown("### 🧪 Projeto Inércia Zero")
+    
+    variante = st.selectbox(
+        "Escolha a variante do Rick:",
+        ["Rick Sarcástico", "Rick Acadêmico", "Rick Inércia Zero"]
+    )
+    
+    st.info("Morty, coloca o PDF aqui ou ficaremos presos nessa dimensão!")
+    uploaded_file = st.file_uploader("📂 Subir PDF", type="pdf", label_visibility="collapsed")
+    
+    if st.button("Explodir Histórico (Reset)"):
         st.session_state.mensagens = []
         st.rerun()
 
-# 3. Processamento RAG
-chunks, pgs = [], []
-if up:
-    with st.spinner("Lendo..."):
-        with pdfplumber.open(up) as pdf:
-            for i, p in enumerate(pdf.pages):
-                txt = p.extract_text()
-                if txt:
-                    for l in txt.split('\n'):
-                        if len(l.strip()) > 50:
-                            chunks.append(l.strip()); pgs.append(i+1)
-        if chunks:
-            embs = model.encode(chunks)
-            index = faiss.IndexFlatL2(embs.shape[1])
-            index.add(np.array(embs))
-
-# 4. Chat
-st.markdown('<h1 class="main-title">MentorEdu</h1>', unsafe_allow_html=True)
-if "mensagens" not in st.session_state: st.session_state.mensagens = []
-
-for m in st.session_state.mensagens:
-    av = "logo2.png" if m["role"] == "user" else "logo.png"
-    with st.chat_message(m["role"], avatar=av): st.markdown(m["content"])
-
-if prompt := st.chat_input("Diz aí, Morty..."):
-    st.session_state.mensagens.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar="logo2.png"): st.markdown(prompt)
-
-    with st.chat_message("assistant", avatar="logo.png"):
-        ctx = ""
-        if up and chunks:
-            q_emb = model.encode([prompt])
-            D, I = index.search(np.array(q_emb), k=3)
-            for idx in I[0]: ctx += f"[Pág {pgs[idx]}] {chunks[idx]}\n"
-
-        pers = {
-            "Rick Sarcástico": "Você é o Rick Sanchez. Sarcástico e chama o usuário de Morty.",
-            "Rick Acadêmico": "Você é o Rick Reitor. Científico, ranzinza e focado no IFCE.",
-            "Rick Inércia Zero": "Você quer tirar o Morty da inércia com motivação agressiva."
-        }
-        
-        try:
-            full_p = f"Contexto: {ctx}\n\nPergunta: {prompt}" if ctx else prompt
-            res = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[{"role":"system","content":pers[var]},{"role":"user","content":full_p}]
-            )
-            ans = res.choices[0].message.content
-            st.markdown(ans)
-            st.session_state.mensagens.append({"role": "assistant", "content": ans})
-        except: st.error("Erro no portal!")
+# --- Processamento RAG (Cérebro do Rick) ---
+chunks, paginas = [], []
+if uploaded_file:
+    with st.spinner("Rick está analisando... isso é ciência, Morty!"):
+        with pdfplumber.open(uploaded_
