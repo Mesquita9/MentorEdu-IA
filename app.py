@@ -14,7 +14,7 @@ st.markdown("""
     /* FUNDO E TEXTO GLOBAL */
     .stApp { background-color: #0e1117; color: #ffffff; font-family: 'Inter', sans-serif; }
 
-    /* BARRA LATERAL (SIDEBAR) */
+    /* BARRA LATERAL (SIDEBAR) - RESOLVENDO AS CAIXAS BRANCAS */
     [data-testid="stSidebar"] {
         background-color: #161b22 !important;
         border-right: 1px solid #30363d;
@@ -27,10 +27,11 @@ st.markdown("""
         font-size: 0.95rem !important;
     }
 
-    /* CORREÇÃO DAS CAIXAS BRANCAS (SELECTBOX E UPLOADER) */
+    /* FIX PARA CAMPOS DE SELEÇÃO E UPLOADER (FUNDO ESCURO + LETRA BRANCA) */
     div[data-baseweb="select"] > div {
         background-color: #1e2530 !important;
         border: 2px solid #3b424b !important;
+        color: white !important;
     }
     
     div[data-testid="stFileUploader"] section {
@@ -48,7 +49,7 @@ st.markdown("""
         font-weight: 800; font-size: 3.5rem; margin-top: -40px; 
     }
 
-    /* BALÕES DE CONVERSA (DARK MODE) */
+    /* BALÕES DE CONVERSA */
     [data-testid="stChatMessage"] {
         background-color: #1c2128 !important;
         border: 1px solid #30363d !important;
@@ -56,23 +57,39 @@ st.markdown("""
         margin-bottom: 15px;
     }
     
-    /* INPUT DE MENSAGEM */
-    [data-testid="stChatInput"] {
-        background-color: #0e1117 !important;
-    }
-
     header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. CARREGAMENTO DE MODELOS (CACHEADO)
+# 2. MOTOR DE INTELIGÊNCIA
 @st.cache_resource
 def load_engine():
     try:
         api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            st.error("GROQ_API_KEY não encontrada nas variáveis de ambiente!")
         c = Groq(api_key=api_key)
         m = SentenceTransformer("all-MiniLM-L6-v2")
         return c, m
-    except Exception as e:
+    except Exception:
+        return None, None
+
+client, model = load_engine()
+
+# 3. BARRA LATERAL
+with st.sidebar:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=120)
+    else:
+        st.markdown("## 🧪 MENTOREDU")
+        
+    st.markdown("---")
+    modo = st.selectbox("ESTILO DO RICK:", 
+                        ["Rick Acadêmico", "Rick Inércia Zero", "Rick Sarcástico"])
+    
+    up = st.file_uploader("📂 SUBIR BASE (PDF)", type="pdf")
+    
+    if st.button("LIMPAR HISTÓRICO"):
+        st.session_state.mensagens = []
+        st.rerun()
+
+# 4. LÓGICA DE MEMÓRIA E PDF
+if "mensagens" not in st.session_state:
