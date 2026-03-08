@@ -9,32 +9,36 @@ from sentence_transformers import SentenceTransformer
 # 1. Configuração da Página
 st.set_page_config(page_title="Inércia Zero - MentorEdu", page_icon="🧪", layout="wide")
 
-# 2. Estilização Rick and Morty / Inércia Zero
-st.markdown("""
+# --- ESTILIZAÇÃO DINÂMICA (Dark/Light) ---
+if "tema_escuro" not in st.session_state:
+    st.session_state.tema_escuro = True
+
+# Cores baseadas no modo
+bg_color = "#0e1117" if st.session_state.tema_escuro else "#ffffff"
+text_color = "#ffffff" if st.session_state.tema_escuro else "#000000"
+card_bg = "#1f2937" if st.session_state.tema_escuro else "#f0f2f6"
+
+st.markdown(f"""
     <style>
-    .main-title {
+    .stApp {{
+        background-color: {bg_color};
+        color: {text_color};
+    }}
+    .main-title {{
         text-align: center;
-        color: #97ce4c; /* Verde Portal */
-        font-family: 'Courier New', Courier, monospace;
+        color: #97ce4c; 
+        font-family: 'Courier New', monospace;
         font-weight: 900;
         font-size: 3.5rem;
-        text-shadow: 2px 2px #44281d;
-    }
-    .subtitle {
-        text-align: center;
-        color: #88e23b;
-        font-size: 1.2rem;
-        margin-bottom: 2rem;
-    }
-    /* Estilo para as mensagens */
-    .stChatMessage {
-        border-radius: 15px;
+    }}
+    .stChatMessage {{
+        background-color: {card_bg};
         border: 2px solid #97ce4c;
-    }
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- Inicialização ---
+# --- Inicialização de Recursos ---
 @st.cache_resource
 def load_resources():
     api_key = os.getenv("GROQ_API_KEY")
@@ -46,78 +50,34 @@ client, model = load_resources()
 
 # --- BARRA LATERAL (Portal de Comando) ---
 with st.sidebar:
-    st.image("logo.png", width=150) # Rick na sidebar
-    st.markdown("### 🧪 Projeto Inércia Zero")
-    st.info("Morty, coloca o PDF aqui ou a gente nunca vai sair dessa dimensão acadêmica!")
-    uploaded_file = st.file_uploader("Subir PDF", type="pdf", label_visibility="collapsed")
+    st.image("logo.png", width=150)
+    st.markdown("### ⚙️ Ajustes de Dimensão")
     
-    if st.button("Explodir Histórico (Reset)"):
+    # Alternador de Tema
+    st.session_state.tema_escuro = st.toggle("Modo Escuro", value=True)
+    
+    # Seletor de Personalidade
+    persona = st.selectbox(
+        "Variante do Rick:",
+        ["Rick Sarcástico", "Rick Acadêmico (IFCE)", "Rick Motivador"]
+    )
+    
+    st.markdown("---")
+    st.info("Morty, joga o PDF aí!")
+    uploaded_file = st.file_uploader("Upload", type="pdf", label_visibility="collapsed")
+    
+    if st.button("Limpar Linha do Tempo"):
         st.session_state.mensagens = []
         st.rerun()
 
-# --- Processamento RAG (Cérebro do Rick) ---
+# --- Lógica de Personalidade ---
+dicionario_personas = {
+    "Rick Sarcástico": "Você é o Rick Sanchez clássico. Genial, sarcástico e chama o usuário de Morty. Use 'Wubba Lubba Dub Dub'.",
+    "Rick Acadêmico (IFCE)": "Você é uma variante do Rick que é Diretor de Pesquisa no IFCE. Você é brilhante, usa termos científicos de alto nível e foca em normas técnicas, mas ainda é superior.",
+    "Rick Motivador": "Você é o Rick focado no Projeto Inércia Zero. Seu objetivo é tirar o Morty da preguiça. Seja agressivo e motivador para ele terminar a pesquisa."
+}
+
+# --- PROCESSAMENTO PDF (RAG) ---
 chunks, paginas = [], []
 if uploaded_file:
-    with st.spinner("Analisando... isso é ciência de verdade, Morty!"):
-        with pdfplumber.open(uploaded_file) as pdf:
-            for i, page in enumerate(pdf.pages):
-                text = page.extract_text()
-                if text:
-                    for line in text.split('\n'):
-                        if len(line.strip()) > 50:
-                            chunks.append(line.strip())
-                            paginas.append(i + 1)
-        if chunks:
-            embeddings = model.encode(chunks)
-            index = faiss.IndexFlatL2(embeddings.shape[1])
-            index.add(np.array(embeddings))
-
-# --- CORPO DO CHAT ---
-st.markdown('<h1 class="main-title">MentorEdu</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Dimensão: Projeto Inércia Zero</p>', unsafe_allow_html=True)
-
-if "mensagens" not in st.session_state:
-    st.session_state.mensagens = []
-
-# Exibição das mensagens com as imagens que você subiu
-for msg in st.session_state.mensagens:
-    if msg["role"] == "user":
-        with st.chat_message("user", avatar="logo2.png"): # Morty
-            st.markdown(f"**Morty:** {msg['content']}")
-    else:
-        with st.chat_message("assistant", avatar="logo.png"): # Rick
-            st.markdown(f"**Rick:** {msg['content']}")
-
-# Input de Chat
-if prompt := st.chat_input("Fala logo, Morty..."):
-    st.session_state.mensagens.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar="logo2.png"):
-        st.markdown(f"**Morty:** {prompt}")
-
-    with st.chat_message("assistant", avatar="logo.png"):
-        contexto = ""
-        if uploaded_file and chunks:
-            q_emb = model.encode([prompt])
-            D, I = index.search(np.array(q_emb), k=3)
-            for idx in I[0]:
-                contexto += f"[Página {paginas[idx]}] {chunks[idx]}\n"
-
-        try:
-            full_prompt = f"Contexto do PDF:\n{contexto}\n\nPergunta do Morty: {prompt}" if contexto else prompt
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": """
-                    Você é o Rick Sanchez. Você é o mentor do 'Projeto Inércia Zero'.
-                    Sua personalidade: Gênio, sarcástico, impaciente, usa 'Wubba Lubba Dub Dub' e chama o usuário de Morty.
-                    Se houver contexto de PDF, use-o para dar uma resposta cientificamente perfeita, mas com seu jeito grosso.
-                    Se não houver PDF, apenas responda como o Rick faria.
-                    """},
-                    {"role": "user", "content": full_prompt}
-                ]
-            )
-            answer = response.choices[0].message.content
-            st.markdown(f"**Rick:** {answer}")
-            st.session_state.mensagens.append({"role": "assistant", "content": answer})
-        except Exception as e:
-            st.error("O portal deu erro, Morty! A culpa é sua!")
+    with st.spinner("Lendo...
