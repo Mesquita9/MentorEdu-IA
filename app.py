@@ -3,6 +3,7 @@ import pdfplumber
 import os
 import numpy as np
 import faiss
+import re
 
 from groq import Groq
 from sentence_transformers import SentenceTransformer
@@ -34,14 +35,14 @@ if uploaded_file:
             if page_text:
                 # dividir em pedaços de 500 caracteres
                 partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
-                # filtrar partes vazias ou muito pequenas
-                partes = [p for p in partes if len(p.strip()) > 20]
+                # filtrar partes vazias, muito pequenas ou com links irrelevantes/exercícios
+                partes = [p for p in partes if len(p.strip()) > 30 and not re.search(r"https?://", p)]
                 for p in partes:
                     chunks.append(p)
                     paginas.append(i + 1)
 
     if len(chunks) == 0:
-        st.error("Não foi possível extrair texto do PDF.")
+        st.error("Não foi possível extrair texto útil do PDF.")
         st.stop()
 
     st.write(f"Texto extraído do PDF: {len(chunks)} trechos válidos.")
@@ -64,7 +65,7 @@ if uploaded_file:
 
         try:
             pergunta_embedding = modelo_embeddings.encode([pergunta])
-            D, I = index.search(np.array(pergunta_embedding), k=3)  # k=3
+            D, I = index.search(np.array(pergunta_embedding), k=3)  # k=5 agora para mais contexto
 
             contexto = ""
             for i in I[0]:
@@ -73,7 +74,8 @@ if uploaded_file:
             contexto = contexto[:3000]  # limitar tamanho
 
             prompt = f"""
-Use apenas o contexto abaixo para responder.
+Responda usando apenas o contexto abaixo para fornecer a resposta mais precisa possível.
+Não invente informações que não estão nos trechos fornecidos.
 
 Contexto:
 {contexto}
