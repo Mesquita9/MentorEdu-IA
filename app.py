@@ -9,16 +9,27 @@ from sentence_transformers import SentenceTransformer
 # 1. Configuração da Página
 st.set_page_config(page_title="Inércia Zero - MentorEdu", page_icon="🧪", layout="wide")
 
-# 2. Estilização Visual
+# 2. CSS Estilo Dark (Inspirado em Gemini/GPT)
 st.markdown("""
     <style>
-    .main-title { text-align: center; color: #97ce4c; font-family: 'Courier New', monospace; font-weight: 900; font-size: 3.5rem; text-shadow: 2px 2px #44281d; }
-    .subtitle { text-align: center; color: #88e23b; font-size: 1.2rem; margin-bottom: 2rem; }
-    .stChatMessage { border-radius: 15px; border: 2px solid #97ce4c; }
+    /* Forçar Fundo Escuro em Tudo */
+    .stApp { background-color: #0e1117; color: #e0e0e0; }
+    section[data-testid="stSidebar"] { background-color: #161b22 !important; }
+    
+    /* Título MentorEdu Neon */
+    .main-title { text-align: center; color: #88e23b; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 3rem; margin-top: -50px; }
+    .subtitle { text-align: center; color: #9eaab7; font-size: 1.1rem; margin-bottom: 2rem; }
+
+    /* Balões de Chat Estilo Grafite */
+    [data-testid="stChatMessage"] { background-color: #21262d; border: 1px solid #30363d; border-radius: 12px; margin-bottom: 10px; color: white !important; }
+    
+    /* Garantir que o Input de Texto apareça no rodapé */
+    .stChatInputContainer { padding-bottom: 20px; background-color: transparent !important; }
+    input { color: #ffffff !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- Inicialização de Recursos ---
+# --- Inicialização ---
 @st.cache_resource
 def load_resources():
     api_key = os.getenv("GROQ_API_KEY")
@@ -28,32 +39,24 @@ def load_resources():
 
 client, model = load_resources()
 
-if not client:
-    st.error("Erro: Verifique a GROQ_API_KEY nas configurações do Streamlit.")
-    st.stop()
-
-# --- Barra Lateral (Configurações) ---
+# --- BARRA LATERAL (Portal de Comando) ---
 with st.sidebar:
     if os.path.exists("logo.png"):
-        st.image("logo.png", width=150)
+        st.image("logo.png", width=150) # Rick
     
-    st.markdown("### 🧪 Painel de Controle")
-    variante = st.selectbox(
-        "Escolha a variante do Rick:",
-        ["Rick Sarcástico", "Rick Acadêmico", "Rick Inércia Zero"]
-    )
+    st.markdown("### 🧪 Projeto Inércia Zero")
+    variante = st.selectbox("Variante do Rick:", ["Rick Sarcástico", "Rick Acadêmico", "Rick Inércia Zero"])
     
-    st.info("Morty, coloca o PDF aqui ou ficaremos presos nessa aula para sempre!")
-    uploaded_file = st.file_uploader("Subir PDF", type="pdf", label_visibility="collapsed")
+    uploaded_file = st.file_uploader("📂 PDF para análise", type="pdf")
     
-    if st.button("Resetar Dimensão"):
+    if st.button("Explodir Dimensão (Reset)"):
         st.session_state.mensagens = []
         st.rerun()
 
-# --- Processamento do PDF (Cérebro do Rick) ---
+# --- Cérebro do Rick (RAG) ---
 chunks, paginas = [], []
 if uploaded_file:
-    with st.spinner("Analisando... isso é ciência de verdade, Morty!"):
+    with st.spinner("Rick está lendo..."):
         with pdfplumber.open(uploaded_file) as pdf:
             for i, page in enumerate(pdf.pages):
                 text = page.extract_text()
@@ -69,16 +72,19 @@ if uploaded_file:
 
 # --- Interface Principal ---
 st.markdown('<h1 class="main-title">MentorEdu</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Projeto Inércia Zero - Escolha sua realidade</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Projeto Inércia Zero - Rompendo a estática acadêmica</p>', unsafe_allow_html=True)
 
 if "mensagens" not in st.session_state:
     st.session_state.mensagens = []
 
-# Exibição das Mensagens
+# Exibição do Histórico
 for msg in st.session_state.mensagens:
-    avatar = "logo2.png" if msg["role"] == "user" else "logo.png"
-    nome = "Morty" if msg["role"] == "user" else "Rick"
+    avatar = "logo2.png" if msg["role"] == "user" else "logo.png" # Morty e Rick
     with st.chat_message(msg["role"], avatar=avatar):
-        st.markdown(f"**{nome}:** {msg['content']}")
+        st.markdown(msg["content"])
 
-# Entrada de Texto
+# --- BARRA DE TEXTO (AQUI ESTÁ ELA, MORTY!) ---
+if prompt := st.chat_input("Diz aí, Morty..."):
+    st.session_state.mensagens.append({"role": "user", "content": prompt})
+    with st.chat_message("user", avatar="logo2.png"): # Morty
+        st.markdown(prompt
