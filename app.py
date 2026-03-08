@@ -8,7 +8,7 @@ import re
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-st.title("IA que conversa com PDF")
+st.title("IA que conversa e consulta PDFs")
 
 # Verifica API Key
 api_key = os.getenv("GROQ_API_KEY")
@@ -22,23 +22,17 @@ client = Groq(api_key=api_key)
 modelo_embeddings = SentenceTransformer("all-MiniLM-L6-v2")
 
 # Upload do PDF
-uploaded_file = st.file_uploader("Envie um PDF", type="pdf")
+uploaded_file = st.file_uploader("Envie um PDF (opcional)", type="pdf")
+
+chunks = []
+paginas = []
 
 if uploaded_file:
-
-    chunks = []
-    paginas = []
-
-    # Extrair texto do PDF
     with pdfplumber.open(uploaded_file) as pdf:
         for i, page in enumerate(pdf.pages):
             page_text = page.extract_text()
-            
             if page_text:
-                # Divide em pedaços de 500 caracteres
                 partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
-                
-                # Filtra partes irrelevantes
                 partes = [
                     p for p in partes
                     if len(p.strip()) > 50 and
@@ -49,26 +43,24 @@ if uploaded_file:
                     chunks.append(p)
                     paginas.append(i + 1)
 
-    if len(chunks) == 0:
-        st.error("Não foi possível extrair texto útil do PDF.")
-        st.stop()
+    if len(chunks) > 0:
+        st.write(f"Texto extraído do PDF: {len(chunks)} trechos válidos.")
 
-    st.write(f"Texto extraído do PDF: {len(chunks)} trechos válidos.")
+        # Criar embeddings
+        embeddings = modelo_embeddings.encode(chunks)
+        dimension = embeddings.shape[1]
+        index = faiss.IndexFlatL2(dimension)
+        index.add(np.array(embeddings))
 
-    # Criar embeddings
-    embeddings = modelo_embeddings.encode(chunks)
-    dimension = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dimension)
-    index.add(np.array(embeddings))
+# Iniciar histórico de chat
+if "mensagens" not in st.session_state:
+    st.session_state.mensagens = []
 
-    # Iniciar sessão de chat
-    if "mensagens" not in st.session_state:
-        st.session_state.mensagens = []
+pergunta = st.text_input("Faça uma pergunta sobre o PDF ou qualquer assunto")
 
-    pergunta = st.text_input("Faça uma pergunta sobre o PDF")
-
-    if pergunta:
-        # Construir contexto relevante usando k=5 trechos
+if pergunta:
+    # Se PDF existe, tenta usar contexto
+    if len(chunks) > 0:
         pergunta_embedding = modelo_embeddings.encode([pergunta])
         D, I = index.search(np.array(pergunta_embedding), k=5)
 
@@ -78,44 +70,45 @@ if uploaded_file:
 
         contexto = contexto[:3000]  # limitar tamanho
 
-        # Prompt final para IA
         prompt = f"""
-Você é uma IA que responde apenas com base no conteúdo do PDF abaixo.
-Não invente informações, não inclua mensagens sobre não ter acesso ao PDF.
-Forneça respostas concisas, objetivas e claras sobre a pergunta.
+Você é uma IA que responde com base no PDF abaixo,
+mas se a pergunta não estiver no PDF, você pode responder normalmente.
+Não invente informações sobre o PDF.
 
-Contexto:
+Contexto do PDF:
 {contexto}
 
 Pergunta:
 {pergunta}
 """
+    else:
+        # Sem PDF, IA responde normalmente
+        prompt = pergunta
 
-        try:
-            # Chamada à API Groq
-            resposta = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": "Você é um assistente que responde apenas usando o PDF enviado."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=400
-            )
+    try:
+        resposta = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": "Você é uma IA conversacional que pode usar PDFs como contexto."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=400
+        )
 
-            conteudo_resposta = resposta.choices[0].message.content
+        conteudo_resposta = resposta.choices[0].message.content
 
-            # Salvar pergunta e resposta no histórico
-            st.session_state.mensagens.append({"role": "user", "content": pergunta})
-            st.session_state.mensagens.append({"role": "assistant", "content": conteudo_resposta})
+        # Salvar pergunta e resposta no histórico
+        st.session_state.mensagens.append({"role": "user", "content": pergunta})
+        st.session_state.mensagens.append({"role": "assistant", "content": conteudo_resposta})
 
-        except Exception as e:
-            st.error("Erro na chamada da API")
-            st.code(str(e))
+    except Exception as e:
+        st.error("Erro na chamada da API")
+        st.code(str(e))
 
-    # Mostrar histórico do chat
-    st.markdown("### Histórico do Chat")
-    for msg in st.session_state.mensagens:
-        if msg["role"] == "user":
-            st.markdown(f"**Você:** {msg['content']}")
-        else:
-            st.markdown(f"**IA:** {msg['content']}")
+# Mostrar histórico do chat
+st.markdown("### Histórico do Chat")
+for msg in st.session_state.mensagens:
+    if msg["role"] == "user":
+        st.markdown(f"**Você:** {msg['content']}")
+    else:
+        st.markdown(f"**IA:** {msg['content']}")
