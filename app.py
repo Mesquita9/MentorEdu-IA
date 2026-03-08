@@ -4,7 +4,7 @@ import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# 1. ESTILO STARTUP (INTER + ALTO CONTRASTE)
+# 1. DESIGN DE ELITE (INTER + ALTO CONTRASTE)
 st.set_page_config(page_title="MentorEdu", page_icon="🧪", layout="wide")
 
 st.markdown("""
@@ -13,18 +13,18 @@ st.markdown("""
     html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
     .stApp { background-color: #0b1117; color: #f0f2f6; }
     
-    /* BARRA LATERAL LEGÍVEL */
+    /* SIDEBAR TOTALMENTE LEGÍVEL */
     [data-testid="stSidebar"] { background-color: #161b22 !important; border-right: 1px solid #30363d; }
     [data-testid="stSidebar"] * { color: #ffffff !important; font-weight: bold !important; }
     
-    /* TÍTULO COM GRADIENTE */
+    /* TÍTULO COM GRADIENTE MENTOREDU */
     .title { text-align: center; background: linear-gradient(90deg, #00d4ff, #88e23b);
               -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-              font-weight: 800; font-size: 3rem; margin-top: -50px; }
+              font-weight: 800; font-size: 3.5rem; margin-top: -50px; }
 
-    /* CHAT DARK MODE */
+    /* BALÕES DE CHAT DARK MODE */
     [data-testid="stChatMessage"] { background-color: #1e2530 !important; border-radius: 12px !important; border: 1px solid #30363d !important; }
-    [data-testid="stChatMessage"] p { color: #ffffff !important; }
+    [data-testid="stChatMessage"] p { color: #ffffff !important; font-size: 1.1rem !important; }
     
     header, footer { visibility: hidden; }
     </style>
@@ -38,20 +38,20 @@ def load_all():
 
 client, model = load_all()
 
-# 2. BARRA LATERAL
+# 2. BARRA LATERAL (PROJETO INÉRCIA ZERO)
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=100)
-    st.markdown("### 🧪 INÉRCIA ZERO")
+    st.markdown("### 🧪 PROJETO INÉRCIA ZERO")
     modo = st.selectbox("PERSONALIDADE:", ["Rick Acadêmico", "Rick Inércia Zero", "Rick Sarcástico"])
-    up = st.file_uploader("📂 SUBIR PDF", type="pdf")
+    up = st.file_uploader("📂 SUBIR PDF (BASE)", type="pdf")
     if st.button("RESETAR SISTEMA"):
         st.session_state.mensagens = []
         st.rerun()
 
-# 3. LÓGICA RAG
+# 3. LÓGICA RAG (CÉREBRO)
 chunks, pgs = [], []
 if up:
-    with st.spinner("Rick lendo..."):
+    with st.spinner("Rick lendo PDF..."):
         with pdfplumber.open(up) as pdf:
             for i, p in enumerate(pdf.pages):
                 t = p.extract_text()
@@ -64,7 +64,7 @@ if up:
             index = faiss.IndexFlatL2(embs.shape[1])
             index.add(np.array(embs))
 
-# 4. INTERFACE
+# 4. INTERFACE PRINCIPAL
 st.markdown('<h1 class="title">MentorEdu</h1>', unsafe_allow_html=True)
 if "mensagens" not in st.session_state: st.session_state.mensagens = []
 
@@ -90,4 +90,12 @@ if prompt := st.chat_input("Diz aí, Morty..."):
         }
         
         try:
-            full = f"Contexto:\n{ctx}\n\nPergunta
+            full = f"Contexto:\n{ctx}\n\nPergunta: {prompt}" if ctx else prompt
+            res = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role":"system","content":p_sys[modo]},{"role":"user","content":full}]
+            )
+            ans = res.choices[0].message.content
+            st.markdown(f"**RICK:** {ans}")
+            st.session_state.mensagens.append({"role": "assistant", "content": ans})
+        except: st.error("Erro no portal!")
