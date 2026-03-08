@@ -63,7 +63,7 @@ if uploaded_file:
 
             pergunta_embedding = modelo_embeddings.encode([pergunta])
 
-            D, I = index.search(np.array(pergunta_embedding), k=5)
+            D, I = index.search(np.array(pergunta_embedding), k=3)
 
             contexto = ""
 
