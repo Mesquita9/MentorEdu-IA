@@ -4,31 +4,30 @@ import PyPDF2
 
 st.set_page_config(page_title="MentorEdu - IA", page_icon="🎓")
 
-# Conectando com a chave nova que você colocou nos Secrets
 try:
     client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
-except:
-    st.error("Configure a GOOGLE_API_KEY nos Secrets do Streamlit.")
+except Exception as e:
+    st.error(f"Erro ao carregar a chave: {e}")
     st.stop()
 
-st.title("🎓 MentorEdu")
-uploaded_file = st.file_uploader("Suba seu PDF de estudo", type="pdf")
+st.title("🎓 MentorEdu (Modo Diagnóstico)")
+uploaded_file = st.file_uploader("Suba seu PDF", type="pdf")
 
 if uploaded_file:
-    # Lendo apenas as primeiras páginas para não estourar o limite
     reader = PyPDF2.PdfReader(uploaded_file)
     texto = ""
-    for i in range(min(10, len(reader.pages))): # Limitamos a 10 páginas por vez
+    # Lendo só as 3 primeiras páginas para ser ultra rápido
+    for i in range(min(3, len(reader.pages))): 
         texto += reader.pages[i].extract_text()
     
-    st.success("PDF carregado (Modo Otimizado)!")
-    pergunta = st.chat_input("O que deseja saber sobre este conteúdo?")
+    st.success("PDF carregado!")
+    pergunta = st.chat_input("Digite algo")
 
     if pergunta:
         try:
-            # Enviando um comando bem curto para a IA não travar
-            prompt = f"Contexto: {texto[:1000]}... Pergunta: {pergunta}"
+            prompt = f"Contexto: {texto[:500]}... Pergunta: {pergunta}"
             response = client.models.generate_content(model="gemini-1.5-flash", contents=prompt)
             st.write(response.text)
-        except:
-            st.error("⚠️ O Gemini está ocupado. Espere 15 segundos e tente de novo.")
+        except Exception as e:
+            # O PULO DO GATO: MOSTRAR O ERRO REAL EM VEZ DA MENSAGEM GENÉRICA
+            st.error(f"🚨 ERRO REAL DETECTADO: {e}")
