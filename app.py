@@ -6,7 +6,6 @@ import faiss
 import re
 from groq import Groq
 from sentence_transformers import SentenceTransformer
-import pandas as pd
 
 # -------------------------------
 # Título do app
@@ -27,6 +26,13 @@ client = Groq(api_key=api_key)
 modelo_embeddings = SentenceTransformer("all-MiniLM-L6-v2")
 
 # -------------------------------
+# Determinar cores legíveis dependendo do tema
+theme_base = st.get_option("theme.base")  # 'light' ou 'dark'
+user_bg = "#cce5ff" if theme_base == "light" else "#005f87"
+ia_bg = "#e8e8e8" if theme_base == "light" else "#333333"
+text_color = "#000000" if theme_base == "light" else "#ffffff"
+
+# -------------------------------
 # Layout em colunas para minimalismo
 col1, col2 = st.columns([1, 4])
 
@@ -44,7 +50,7 @@ with col1:
             for i, page in enumerate(pdf.pages):
                 page_text = page.extract_text()
                 if page_text:
-                    # Extrair títulos como possíveis tópicos (linhas em maiúsculas ou terminando com ":")
+                    # Extrair títulos como possíveis tópicos
                     linhas = page_text.split("\n")
                     for linha in linhas:
                         linha_limpa = linha.strip()
@@ -129,15 +135,15 @@ Pergunta:
             st.code(str(e))
 
     # -------------------------------
-    # Mostrar histórico do chat estilizado
+    # Mostrar histórico do chat estilizado e legível
     for msg in st.session_state.mensagens:
         if msg["role"] == "user":
             st.markdown(
-                f"<div style='background-color:#d9f1ff;padding:8px;margin:4px 0;border-radius:5px'><b>Você:</b> {msg['content']}</div>",
+                f"<div style='background-color:{user_bg};padding:8px;margin:4px 0;border-radius:5px;color:{text_color}'><b>Você:</b> {msg['content']}</div>",
                 unsafe_allow_html=True
             )
         else:
             st.markdown(
-                f"<div style='background-color:#f0f0f0;padding:8px;margin:4px 0;border-radius:5px'><b>IA:</b> {msg['content']}</div>",
+                f"<div style='background-color:{ia_bg};padding:8px;margin:4px 0;border-radius:5px;color:{text_color}'><b>IA:</b> {msg['content']}</div>",
                 unsafe_allow_html=True
             )
