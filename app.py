@@ -4,99 +4,75 @@ import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# 1. DESIGN DE ELITE (ALTO CONTRASTE)
+# 1. CONFIGURAÇÃO E DESIGN DE ALTO CONTRASTE
 st.set_page_config(page_title="MentorEdu", page_icon="🧪", layout="wide")
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
-    .stApp { background-color: #0b1117; color: #f0f2f6; }
     
-    /* SIDEBAR: FORÇANDO VISIBILIDADE */
-    [data-testid="stSidebar"] { background-color: #161b22 !important; border-right: 1px solid #30363d; }
-    [data-testid="stSidebar"] * { color: #ffffff !important; font-weight: bold !important; }
-    [data-testid="stSidebar"] label { font-size: 1rem !important; }
-    
-    /* TÍTULO COM GRADIENTE */
-    .title { text-align: center; background: linear-gradient(90deg, #00d4ff, #88e23b);
-              -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-              font-weight: 800; font-size: 3.5rem; margin-top: -50px; }
+    /* FUNDO E TEXTO GLOBAL */
+    .stApp { background-color: #0e1117; color: #ffffff; font-family: 'Inter', sans-serif; }
 
-    /* CHAT DARK MODE */
-    [data-testid="stChatMessage"] { background-color: #1e2530 !important; border-radius: 12px !important; border: 1px solid #30363d !important; }
-    [data-testid="stChatMessage"] p { color: #ffffff !important; }
+    /* BARRA LATERAL (SIDEBAR) */
+    [data-testid="stSidebar"] {
+        background-color: #161b22 !important;
+        border-right: 1px solid #30363d;
+    }
     
+    /* FORÇAR VISIBILIDADE DOS TEXTOS DA ESQUERDA */
+    [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+    }
+
+    /* CORREÇÃO DAS CAIXAS BRANCAS (SELECTBOX E UPLOADER) */
+    div[data-baseweb="select"] > div {
+        background-color: #1e2530 !important;
+        border: 2px solid #3b424b !important;
+    }
+    
+    div[data-testid="stFileUploader"] section {
+        background-color: #1e2530 !important;
+        border: 1px dashed #444c56 !important;
+        color: white !important;
+    }
+
+    /* TÍTULO COM GRADIENTE */
+    .main-title { 
+        text-align: center; 
+        background: linear-gradient(90deg, #00d4ff, #88e23b);
+        -webkit-background-clip: text; 
+        -webkit-text-fill-color: transparent;
+        font-weight: 800; font-size: 3.5rem; margin-top: -40px; 
+    }
+
+    /* BALÕES DE CONVERSA (DARK MODE) */
+    [data-testid="stChatMessage"] {
+        background-color: #1c2128 !important;
+        border: 1px solid #30363d !important;
+        border-radius: 12px;
+        margin-bottom: 15px;
+    }
+    
+    /* INPUT DE MENSAGEM */
+    [data-testid="stChatInput"] {
+        background-color: #0e1117 !important;
+    }
+
     header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
+# 2. CARREGAMENTO DE MODELOS (CACHEADO)
 @st.cache_resource
-def load_all():
-    c = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    m = SentenceTransformer("all-MiniLM-L6-v2")
-    return c, m
-
-client, model = load_all()
-
-# 2. BARRA LATERAL (PAINEL DE CONTROLE)
-with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", width=120)
-    st.markdown("### 🧪 MENTOREDU V1.0")
-    modo = st.selectbox("ESTILO DO RICK:", ["Rick Acadêmico", "Rick Inércia Zero", "Rick Sarcástico"])
-    up = st.file_uploader("📂 PDF DE BASE", type="pdf")
-    if st.button("LIMPAR HISTÓRICO"):
-        st.session_state.mensagens = []
-        st.rerun()
-
-# 3. LÓGICA RAG (CÉREBRO)
-chunks, pgs = [], []
-if up:
-    with st.spinner("Rick analisando dados..."):
-        with pdfplumber.open(up) as pdf:
-            for i, p in enumerate(pdf.pages):
-                txt = p.extract_text()
-                if txt:
-                    for l in txt.split('\n'):
-                        if len(l.strip()) > 40:
-                            chunks.append(l.strip()); pgs.append(i+1)
-        if chunks:
-            embs = model.encode(chunks)
-            idx_faiss = faiss.IndexFlatL2(embs.shape[1])
-            idx_faiss.add(np.array(embs))
-
-# 4. INTERFACE PRINCIPAL
-st.markdown('<h1 class="title">MentorEdu</h1>', unsafe_allow_html=True)
-if "mensagens" not in st.session_state: st.session_state.mensagens = []
-
-for m in st.session_state.mensagens:
-    with st.chat_message(m["role"]):
-        st.markdown(f"**{m['role'].upper()}:** {m['content']}")
-
-if prompt := st.chat_input("Diz aí, Morty..."):
-    st.session_state.mensagens.append({"role": "user", "content": prompt})
-    with st.chat_message("user"): st.markdown(f"**MORTY:** {prompt}")
-
-    with st.chat_message("assistant"):
-        ctx = ""
-        if up and chunks:
-            q_emb = model.encode([prompt])
-            D, I = idx_faiss.search(np.array(q_emb), k=2)
-            for idx in I[0]: ctx += f"[Pág {pgs[idx]}] {chunks[idx]}\n\n"
-
-        p_sys = {
-            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Focado em ABNT e ciência pura.",
-            "Rick Inércia Zero": "Você é agressivo e motivador. Grite com o Morty!",
-            "Rick Sarcástico": "Você é o Rick Sanchez clássico. Sarcástico e brilhante."
-        }
-        
-        try:
-            full = f"Contexto:\n{ctx}\n\nPergunta: {prompt}" if ctx else prompt
-            res = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[{"role":"system","content":p_sys[modo]},{"role":"user","content":full}]
-            )
-            ans = res.choices[0].message.content
-            st.markdown(f"**RICK:** {ans}")
-            st.session_state.mensagens.append({"role": "assistant", "content": ans})
-        except: st.error("Erro no portal da Groq!")
+def load_engine():
+    try:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            st.error("GROQ_API_KEY não encontrada nas variáveis de ambiente!")
+        c = Groq(api_key=api_key)
+        m = SentenceTransformer("all-MiniLM-L6-v2")
+        return c, m
+    except Exception as e:
