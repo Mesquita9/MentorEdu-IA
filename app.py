@@ -62,8 +62,8 @@ if up:
                             chunks.append(l.strip()); pgs.append(i+1)
         if chunks:
             embs = model.encode(chunks)
-            index = faiss.IndexFlatL2(embs.shape[1])
-            index.add(np.array(embs))
+            idx_faiss = faiss.IndexFlatL2(embs.shape[1])
+            idx_faiss.add(np.array(embs))
 
 # 4. INTERFACE PRINCIPAL
 st.markdown('<h1 class="title">MentorEdu</h1>', unsafe_allow_html=True)
@@ -80,4 +80,23 @@ if prompt := st.chat_input("Diz aí, Morty..."):
     with st.chat_message("assistant"):
         ctx = ""
         if up and chunks:
-            q_emb = model.
+            q_emb = model.encode([prompt])
+            D, I = idx_faiss.search(np.array(q_emb), k=2)
+            for idx in I[0]: ctx += f"[Pág {pgs[idx]}] {chunks[idx]}\n\n"
+
+        p_sys = {
+            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Formal, ranzinza e focado em ABNT.",
+            "Rick Inércia Zero": "Você é agressivo. Grite para o Morty parar de procrastinar!",
+            "Rick Sarcástico": "Você é o Rick Sanchez clássico. Sarcástico e brilhante."
+        }
+        
+        try:
+            full = f"Contexto:\n{ctx}\n\nPergunta: {prompt}" if ctx else prompt
+            res = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role":"system","content":p_sys[modo]},{"role":"user","content":full}]
+            )
+            ans = res.choices[0].message.content
+            st.markdown(f"**RICK:** {ans}")
+            st.session_state.mensagens.append({"role": "assistant", "content": ans})
+        except: st.error("Erro no portal!")
