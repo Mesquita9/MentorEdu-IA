@@ -36,8 +36,13 @@ if uploaded_file:
             if page_text:
                 # dividir em pedaços de 500 caracteres
                 partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
-                # filtrar partes muito pequenas ou com links irrelevantes
-                partes = [p for p in partes if len(p.strip()) > 10 and not re.search(r"https?://", p)]
+                # filtrar partes irrelevantes
+                partes = [
+                    p for p in partes 
+                    if len(p.strip()) > 50 and
+                       not re.search(r"https?://", p, re.IGNORECASE) and
+                       not re.search(r"Exercícios?|Questão|Capítulo", p, re.IGNORECASE)
+                ]
                 for p in partes:
                     chunks.append(p)
                     paginas.append(i + 1)
@@ -66,7 +71,7 @@ if uploaded_file:
 
         try:
             pergunta_embedding = modelo_embeddings.encode([pergunta])
-            D, I = index.search(np.array(pergunta_embedding), k=3)  # k=3 trechos mais relevantes
+            D, I = index.search(np.array(pergunta_embedding), k=5)  # k=5 para mais contexto
 
             contexto = ""
             for i in I[0]:
@@ -74,9 +79,11 @@ if uploaded_file:
 
             contexto = contexto[:3000]  # limitar tamanho
 
+            # prompt final aprimorado
             prompt = f"""
-Responda usando apenas o contexto abaixo para fornecer a resposta mais precisa possível.
-Não invente informações que não estão nos trechos fornecidos.
+Responda usando apenas o contexto abaixo. 
+Não invente informações, não inclua avisos sobre não ter acesso ao PDF.
+Forneça uma resposta concisa, objetiva e clara sobre a pergunta.
 
 Contexto:
 {contexto}
