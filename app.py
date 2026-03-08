@@ -62,7 +62,7 @@ if up:
         if chunks:
             embs = model.encode(chunks)
             index = faiss.IndexFlatL2(embs.shape[1])
-            index.add(np.array(embs))
+            index.add(np.array(embeddings))
 
 # 4. INTERFACE PRINCIPAL
 st.markdown('<h1 class="title">MentorEdu</h1>', unsafe_allow_html=True)
@@ -97,5 +97,4 @@ if prompt := st.chat_input("Diz aí, Morty..."):
             )
             ans = res.choices[0].message.content
             st.markdown(f"**RICK:** {ans}")
-            st.session_state.mensagens.append({"role": "assistant", "content": ans})
-        except: st.error("Erro no portal!")
+            st.session_state.mensagens
