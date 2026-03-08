@@ -10,7 +10,7 @@ from sentence_transformers import SentenceTransformer
 
 st.title("IA que conversa com PDF")
 
-# verificar API
+# Verifica API Key
 api_key = os.getenv("GROQ_API_KEY")
 if not api_key:
     st.error("GROQ_API_KEY não encontrada nas Secrets.")
@@ -18,10 +18,10 @@ if not api_key:
 
 client = Groq(api_key=api_key)
 
-# modelo de embeddings
+# Modelo de embeddings
 modelo_embeddings = SentenceTransformer("all-MiniLM-L6-v2")
 
-# upload do PDF
+# Upload do PDF
 uploaded_file = st.file_uploader("Envie um PDF", type="pdf")
 
 if uploaded_file:
@@ -29,21 +29,22 @@ if uploaded_file:
     chunks = []
     paginas = []
 
+    # Extrair texto do PDF
     with pdfplumber.open(uploaded_file) as pdf:
         for i, page in enumerate(pdf.pages):
             page_text = page.extract_text()
             
-            # debug opcional
-            with st.expander(f"Debug: caracteres da Página {i+1}"):
+            # Debug opcional em expander
+            with st.expander(f"Debug: Página {i+1}"):
                 st.write(f"{len(page_text) if page_text else 0} caracteres")
             
             if page_text:
-                # dividir em pedaços de 500 caracteres
+                # Divide em pedaços de 500 caracteres
                 partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
                 
-                # filtrar partes irrelevantes
+                # Filtra partes irrelevantes
                 partes = [
-                    p for p in partes 
+                    p for p in partes
                     if len(p.strip()) > 50 and
                        not re.search(r"https?://", p, re.IGNORECASE) and
                        not re.search(r"Exercícios?|Questão|Capítulo", p, re.IGNORECASE)
@@ -58,37 +59,34 @@ if uploaded_file:
 
     st.write(f"Texto extraído do PDF: {len(chunks)} trechos válidos.")
 
-    # criar embeddings
+    # Criar embeddings
     embeddings = modelo_embeddings.encode(chunks)
     dimension = embeddings.shape[1]
     index = faiss.IndexFlatL2(dimension)
     index.add(np.array(embeddings))
 
-    # iniciar sessão de chat
+    # Iniciar sessão de chat
     if "mensagens" not in st.session_state:
         st.session_state.mensagens = []
 
     pergunta = st.text_input("Faça uma pergunta sobre o PDF")
 
     if pergunta:
-        # salvar pergunta no histórico
-        st.session_state.mensagens.append({"role": "user", "content": pergunta})
+        # Construir contexto relevante usando k=5 trechos
+        pergunta_embedding = modelo_embeddings.encode([pergunta])
+        D, I = index.search(np.array(pergunta_embedding), k=5)
 
-        try:
-            pergunta_embedding = modelo_embeddings.encode([pergunta])
-            D, I = index.search(np.array(pergunta_embedding), k=5)  # k=5 para mais contexto
+        contexto = ""
+        for i in I[0]:
+            contexto += f"(Página {paginas[i]}) {chunks[i]}\n"
 
-            contexto = ""
-            for i in I[0]:
-                contexto += f"(Página {paginas[i]}) {chunks[i]}\n"
+        contexto = contexto[:3000]  # limitar tamanho
 
-            contexto = contexto[:3000]  # limitar tamanho
-
-            # prompt final ajustado
-            prompt = f"""
-Responda usando apenas o contexto abaixo. 
+        # Prompt final para IA
+        prompt = f"""
+Você é uma IA que responde apenas com base no conteúdo do PDF abaixo.
 Não invente informações, não inclua mensagens sobre não ter acesso ao PDF.
-Forneça uma resposta concisa, objetiva e clara sobre a pergunta.
+Forneça respostas concisas, objetivas e claras sobre a pergunta.
 
 Contexto:
 {contexto}
@@ -97,27 +95,32 @@ Pergunta:
 {pergunta}
 """
 
-            # debug opcional do prompt
-            with st.expander("Debug: prompt enviado à IA"):
-                st.text_area("Prompt enviado à IA", prompt, height=300)
+        # Debug opcional do prompt
+        with st.expander("Debug: prompt enviado à IA"):
+            st.text_area("Prompt enviado à IA", prompt, height=300)
 
-            # chamada à API Groq
+        try:
+            # Chamada à API Groq
             resposta = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
-                messages=st.session_state.mensagens,
+                messages=[
+                    {"role": "system", "content": "Você é um assistente que responde apenas usando o PDF enviado."},
+                    {"role": "user", "content": prompt}
+                ],
                 max_tokens=400
             )
 
             conteudo_resposta = resposta.choices[0].message.content
 
-            # salvar resposta corretamente
+            # Salvar resposta no histórico
+            st.session_state.mensagens.append({"role": "user", "content": pergunta})
             st.session_state.mensagens.append({"role": "assistant", "content": conteudo_resposta})
 
         except Exception as e:
             st.error("Erro na chamada da API")
             st.code(str(e))
 
-    # mostrar histórico do chat
+    # Mostrar histórico do chat
     st.markdown("### Histórico do Chat")
     for msg in st.session_state.mensagens:
         if msg["role"] == "user":
