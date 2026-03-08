@@ -81,7 +81,6 @@ if prompt := st.chat_input("Dúvida acadêmica?"):
             for idx in ids[0]:
                 ctx += f"[Pág {st.session_state.db['pgs'][idx]}] {st.session_state.db['textos'][idx]}\n\n"
 
-        # Chamada direta para evitar erros de bloco try
         sys = f"Você é o MentorEdu, tutor oficial do IF. Área: {area}. Responda de forma técnica e didática."
         stream = client.chat.completions.create(
             model="llama-3.1-8b-instant",
