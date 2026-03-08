@@ -4,102 +4,113 @@ import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-# 1. Estilo Dark com Contraste Forçado (Sidebar e Chat)
-st.set_page_config(page_title="Inércia Zero", page_icon="🧪", layout="wide")
+# --- 1. CONFIGURAÇÃO E ESTILO (DESIGN STARTUP/IFCE) ---
+st.set_page_config(page_title="MentorEdu - Inércia Zero", page_icon="🧪", layout="wide")
 
 st.markdown("""
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-    /* Fundo principal */
+    /* Estilo Global */
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
     .stApp { background-color: #0b0e14; color: #f0f2f6; }
     
-    /* BARRA LATERAL - Forçar visibilidade do texto */
-    [data-testid="stSidebar"] { background-color: #1a1f26 !important; }
-    [data-testid="stSidebar"] .stMarkdown p { color: #ffffff !important; font-size: 1.2rem !important; font-weight: bold !important; }
-    [data-testid="stSidebar"] h3 { color: #00d4ff !important; }
-    
-    /* Título MentorEdu */
-    .main-title { text-align: center; color: #00d4ff; font-weight: 800; font-size: 3rem; margin-top: -60px; }
-    
-    /* Balões de Chat Legíveis */
-    [data-testid="stChatMessage"] { background-color: #1e2530 !important; border: 1px solid #30363d !important; border-radius: 15px !important; }
-    [data-testid="stChatMessage"] p { color: #ffffff !important; font-size: 1.1rem !important; }
+    /* Barra Lateral Profissional */
+    [data-testid="stSidebar"] { 
+        background-color: #161b22 !important; 
+        border-right: 1px solid #30363d;
+    }
+    [data-testid="stSidebar"] .stMarkdown p { 
+        color: #ffffff !important; 
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 1rem !important; 
+    }
+    [data-testid="stSidebar"] h3 { color: #00d4ff !important; letter-spacing: -1px; }
 
-    /* Barra de Texto (Input) */
-    .stChatInputContainer { background-color: #0b0e14 !important; }
-    .stChatInputContainer div { background-color: #21262d !important; border: 1px solid #00d4ff !important; }
+    /* Título MentorEdu com Gradiente */
+    .main-title { 
+        text-align: center; 
+        background: linear-gradient(90deg, #00d4ff, #88e23b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800; font-size: 3.5rem; 
+        margin-top: -60px; letter-spacing: -2px;
+    }
+    .subtitle { 
+        text-align: center; color: #9eaab7; 
+        font-weight: 400; margin-top: -15px; margin-bottom: 2rem; 
+    }
+
+    /* Balões de Chat Glassmorphism */
+    [data-testid="stChatMessage"] { 
+        background-color: rgba(30, 37, 48, 0.7) !important; 
+        border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+        border-radius: 12px !important;
+        backdrop-filter: blur(10px);
+        margin-bottom: 10px;
+    }
+    [data-testid="stChatMessage"] p { color: #ffffff !important; font-size: 1.05rem !important; }
     
+    /* Nomes dos Personagens */
+    .user-name, .bot-name {
+        font-family: 'JetBrains Mono', monospace !important;
+        text-transform: uppercase; font-size: 0.75rem;
+        letter-spacing: 1px; margin-bottom: 5px; display: block;
+    }
+    .user-name { color: #88e23b; }
+    .bot-name { color: #00d4ff; }
+
+    /* Barra de Input */
+    .stChatInputContainer { background-color: #0b0e14 !important; }
+    .stChatInputContainer div { border: 1px solid #30363d !important; border-radius: 10px !important; }
+    
+    /* Esconder elementos nativos */
     header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
 @st.cache_resource
-def load_all():
-    c = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    m = SentenceTransformer("all-MiniLM-L6-v2")
-    return c, m
+def load_models():
+    # Garante que o app não quebre se a chave estiver faltando
+    api_key = os.getenv("GROQ_API_KEY")
+    client = Groq(api_key=api_key) if api_key else None
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    return client, model
 
-client, model = load_all()
+client, model = load_models()
 
-# 2. Painel Lateral
+# --- 2. BARRA LATERAL (SIDEBAR) ---
 with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", width=120)
-    st.markdown("### 🧪 Inércia Zero") # Este texto agora está BRANCO e LEGÍVEL
-    var = st.selectbox("Variante:", ["Rick Sarcástico", "Rick Acadêmico", "Rick Inércia Zero"])
-    up = st.file_uploader("📂 Subir PDF", type="pdf")
-    if st.button("Resetar Universo"):
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=100)
+    st.markdown("### 🧪 Projeto Inércia Zero")
+    
+    variante = st.selectbox(
+        "Modo de Operação:",
+        ["Rick Sarcástico", "Rick Acadêmico", "Rick Inércia Zero"]
+    )
+    
+    st.markdown("---")
+    uploaded_file = st.file_uploader("📂 Alimentar Cérebro (PDF)", type="pdf")
+    
+    if st.button("Resetar Realidade"):
         st.session_state.mensagens = []
         st.rerun()
 
-# 3. Cérebro RAG
-chunks, pgs = [], []
-if up:
-    with st.spinner("Rick lendo..."):
-        with pdfplumber.open(up) as pdf:
-            for i, p in enumerate(pdf.pages):
-                txt = p.extract_text()
-                if txt:
-                    for l in txt.split('\n'):
-                        if len(l.strip()) > 50:
-                            chunks.append(l.strip()); pgs.append(i+1)
-        if chunks:
-            embs = model.encode(chunks)
-            index = faiss.IndexFlatL2(embs.shape[1])
-            index.add(np.array(embs))
-
-# 4. Interface de Chat
-st.markdown('<h1 class="main-title">MentorEdu</h1>', unsafe_allow_html=True)
-if "mensagens" not in st.session_state: st.session_state.mensagens = []
-
-for m in st.session_state.mensagens:
-    av = "logo2.png" if m["role"] == "user" else "logo.png"
-    with st.chat_message(m["role"], avatar=av):
-        st.markdown(f"**{'Morty' if m['role'] == 'user' else 'Rick'}:**\n{m['content']}")
-
-if prompt := st.chat_input("Diz aí, Morty..."):
-    st.session_state.mensagens.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar="logo2.png"):
-        st.markdown(f"**Morty:**\n{prompt}")
-
-    with st.chat_message("assistant", avatar="logo.png"):
-        ctx = ""
-        if up and chunks:
-            q_emb = model.encode([prompt])
-            D, I = index.search(np.array(q_emb), k=2)
-            for idx in I[0]: ctx += f"[Pág {pgs[idx]}] {chunks[idx]}\n"
-
-        pers = {
-            "Rick Sarcástico": "Você é o Rick Sanchez clássico. Sarcástico e genial.",
-            "Rick Acadêmico": "Você é o Rick Reitor do IFCE. Exige rigor científico.",
-            "Rick Inércia Zero": "Você motiva o Morty de um jeito agressivo e científico."
-        }
+# --- 3. PROCESSAMENTO RAG (INTELIGÊNCIA) ---
+chunks, pages = [], []
+if uploaded_file:
+    with st.spinner("Rick extraindo dados do PDF..."):
+        with pdfplumber.open(uploaded_file) as pdf:
+            for i, page in enumerate(pdf.pages):
+                text = page.extract_text()
+                if text:
+                    for line in text.split('\n'):
+                        line = line.strip()
+                        if len(line) > 50:
+                            chunks.append(line)
+                            pages.append(i + 1)
         
-        try:
-            full_p = f"Contexto: {ctx}\n\nPergunta: {prompt}" if ctx else prompt
-            res = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[{"role":"system","content":pers[var]},{"role":"user","content":full_p}]
-            )
-            ans = res.choices[0].message.content
-            st.markdown(f"**Rick:**\n{ans}")
-            st.session_state.mensagens.append({"role": "assistant", "content": ans})
-        except: st.error("Erro no portal interdimensional!")
+        if chunks:
+            embeddings = model.encode(chunks)
+            index = faiss.IndexFlatL2(embeddings.shape[1])
+            index.
