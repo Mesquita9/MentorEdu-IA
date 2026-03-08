@@ -1,4 +1,6 @@
 streamlit
-groq
 pdfplumber
-python-dotenv
+groq
+sentence-transformers
+faiss-cpu
+numpy
