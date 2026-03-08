@@ -11,7 +11,6 @@ st.title("IA que conversa com PDF")
 
 # verificar API
 api_key = os.getenv("GROQ_API_KEY")
-
 if not api_key:
     st.error("GROQ_API_KEY não encontrada nas Secrets.")
     st.stop()
@@ -78,6 +77,7 @@ Pergunta:
 {pergunta}
 """
 
+            # chamada à API Groq
             resposta = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=st.session_state.mensagens,
@@ -85,7 +85,9 @@ Pergunta:
             )
 
             conteudo_resposta = resposta.choices[0].message.content
-            st.session_state.mensagens.append({"role": "ai", "content": conteudo_resposta})
+
+            # salvar resposta corretamente com role="assistant"
+            st.session_state.mensagens.append({"role": "assistant", "content": conteudo_resposta})
 
         except Exception as e:
             st.error("Erro na chamada da API")
