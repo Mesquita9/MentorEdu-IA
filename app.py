@@ -32,10 +32,15 @@ if uploaded_file:
     with pdfplumber.open(uploaded_file) as pdf:
         for i, page in enumerate(pdf.pages):
             page_text = page.extract_text()
-            st.write(f"Página {i+1}: {len(page_text) if page_text else 0} caracteres")  # DEBUG
+            
+            # debug opcional
+            with st.expander(f"Debug: caracteres da Página {i+1}"):
+                st.write(f"{len(page_text) if page_text else 0} caracteres")
+            
             if page_text:
                 # dividir em pedaços de 500 caracteres
                 partes = [page_text[j:j+500] for j in range(0, len(page_text), 500)]
+                
                 # filtrar partes irrelevantes
                 partes = [
                     p for p in partes 
@@ -79,10 +84,10 @@ if uploaded_file:
 
             contexto = contexto[:3000]  # limitar tamanho
 
-            # prompt final aprimorado
+            # prompt final ajustado
             prompt = f"""
 Responda usando apenas o contexto abaixo. 
-Não invente informações, não inclua avisos sobre não ter acesso ao PDF.
+Não invente informações, não inclua mensagens sobre não ter acesso ao PDF.
 Forneça uma resposta concisa, objetiva e clara sobre a pergunta.
 
 Contexto:
@@ -92,8 +97,9 @@ Pergunta:
 {pergunta}
 """
 
-            # mostrar prompt para debug
-            st.text_area("Prompt enviado à IA", prompt, height=300)
+            # debug opcional do prompt
+            with st.expander("Debug: prompt enviado à IA"):
+                st.text_area("Prompt enviado à IA", prompt, height=300)
 
             # chamada à API Groq
             resposta = client.chat.completions.create(
@@ -104,7 +110,7 @@ Pergunta:
 
             conteudo_resposta = resposta.choices[0].message.content
 
-            # salvar resposta corretamente com role="assistant"
+            # salvar resposta corretamente
             st.session_state.mensagens.append({"role": "assistant", "content": conteudo_resposta})
 
         except Exception as e:
