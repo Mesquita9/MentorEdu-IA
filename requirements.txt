@@ -1,6 +1,1 @@
-streamlit
-pdfplumber
-groq
-sentence-transformers
-faiss-cpu
-numpy
+
