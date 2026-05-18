@@ -1,1 +1,15 @@
+# API e servidor
+fastapi
+uvicorn
 
+# Requisições para APIs externas
+requests
+
+# Variáveis de ambiente
+python-dotenv
+
+# Validação de dados
+pydantic
+
+# Leitura de PDFs
+pymupdf
