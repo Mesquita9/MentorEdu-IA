@@ -1,1 +1,314 @@
+/* 
+    Estilo principal da interface do Thux.
 
+    Ideia visual:
+    - minimalista
+    - preto/grafite
+    - modo escuro obrigatório
+    - inspiração Linux/Tux
+    - chat limpo e confortável
+*/
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top, rgba(0, 255, 170, 0.08), transparent 35%),
+        linear-gradient(180deg, #050606 0%, #0b0d0e 100%);
+    color: #e7e7e7;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Container geral da aplicação */
+.app-container {
+    width: min(980px, 100%);
+    height: 100vh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+}
+
+/* Cabeçalho */
+.thux-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    background: rgba(15, 17, 18, 0.82);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* Área do logo + nome */
+.thux-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Logo provisório do pinguim */
+.thux-logo {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    background:
+        linear-gradient(145deg, rgba(0, 255, 170, 0.14), rgba(0, 180, 255, 0.08)),
+        #0d1011;
+    border: 1px solid rgba(0, 255, 170, 0.22);
+    font-size: 28px;
+}
+
+/* Nome Thux */
+.thux-header h1 {
+    font-size: 1.65rem;
+    letter-spacing: -0.04em;
+    color: #f5f5f5;
+}
+
+/* Legenda abaixo do nome */
+.thux-header p {
+    margin-top: 2px;
+    color: #9da3a6;
+    font-size: 0.92rem;
+}
+
+/* Indicador online */
+.status-pill {
+    padding: 8px 13px;
+    border-radius: 999px;
+    color: #8fffd0;
+    background: rgba(0, 255, 170, 0.08);
+    border: 1px solid rgba(0, 255, 170, 0.18);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Painel das mensagens */
+.chat-panel {
+    flex: 1;
+    overflow-y: auto;
+    margin: 18px 0;
+    padding: 18px;
+    border-radius: 26px;
+    background: rgba(8, 10, 11, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Mensagens */
+.message {
+    max-width: 78%;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    line-height: 1.55;
+    animation: fadeIn 0.18s ease-out;
+}
+
+/* Nome de quem mandou a mensagem */
+.message-author {
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #9da3a6;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Texto da mensagem */
+.message-content {
+    color: #eeeeee;
+    white-space: pre-wrap;
+}
+
+/* Mensagem do Thux */
+.thux-message {
+    background: rgba(18, 22, 24, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Mensagem do usuário */
+.user-message {
+    margin-left: auto;
+    background: linear-gradient(145deg, rgba(0, 255, 170, 0.15), rgba(0, 180, 255, 0.12));
+    border: 1px solid rgba(0, 255, 170, 0.16);
+}
+
+/* Área inferior do chat */
+.chat-input-area {
+    position: relative;
+}
+
+/* Caixa do input */
+.input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 24px;
+    background: rgba(15, 17, 18, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* Campo de texto */
+textarea {
+    flex: 1;
+    max-height: 160px;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #f2f2f2;
+    font-size: 1rem;
+    line-height: 1.45;
+    padding: 11px 4px;
+    font-family: inherit;
+}
+
+textarea::placeholder {
+    color: #777f82;
+}
+
+/* Botão + */
+.icon-button {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 16px;
+    background: #111516;
+    color: #d7fff0;
+    font-size: 1.55rem;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: 0.18s ease;
+}
+
+.icon-button:hover {
+    background: rgba(0, 255, 170, 0.11);
+    border-color: rgba(0, 255, 170, 0.22);
+}
+
+/* Botão enviar */
+.send-button {
+    min-width: 92px;
+    height: 44px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #0bd88f, #00a7c4);
+    color: #031010;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.18s ease;
+}
+
+.send-button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+}
+
+/* Menu flutuante do + */
+.plus-menu {
+    position: absolute;
+    left: 10px;
+    bottom: 74px;
+    width: 230px;
+    display: none;
+    padding: 8px;
+    border-radius: 20px;
+    background: rgba(13, 16, 17, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+/* Quando o menu estiver aberto */
+.plus-menu.open {
+    display: block;
+}
+
+/* Itens do menu + */
+.plus-menu-item {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: #eeeeee;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+}
+
+.plus-menu-item span {
+    display: block;
+    margin-top: 3px;
+    color: #889093;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+.plus-menu-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Animação simples para novas mensagens */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ajuste para celular */
+@media (max-width: 640px) {
+    .app-container {
+        padding: 12px;
+    }
+
+    .thux-header {
+        border-radius: 20px;
+        padding: 14px;
+    }
+
+    .thux-logo {
+        width: 46px;
+        height: 46px;
+    }
+
+    .thux-header h1 {
+        font-size: 1.35rem;
+    }
+
+    .thux-header p {
+        font-size: 0.8rem;
+    }
+
+    .status-pill {
+        display: none;
+    }
+
+    .message {
+        max-width: 92%;
+    }
+
+    .send-button {
+        min-width: 74px;
+    }
+}
