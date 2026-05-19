@@ -1,11 +1,16 @@
 """
 Arquivo principal do Thux-AI.
 
-Este arquivo inicia a aplicação FastAPI e conecta as rotas principais do projeto.
-Ele deve continuar simples: a lógica pesada fica distribuída nas pastas core, routes, tools e database.
+Este arquivo inicia a aplicação FastAPI, conecta as rotas principais
+e entrega a interface visual do projeto.
+
+Ele deve continuar simples: a lógica pesada fica distribuída nas pastas
+core, routes, tools e database.
 """
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from routes.chat import router as chat_router
 
@@ -22,17 +27,23 @@ app = FastAPI(
 app.include_router(chat_router)
 
 
+# Entrega os arquivos estáticos da interface
+# Exemplo: /frontend/style.css e /frontend/script.js
+app.mount(
+    "/frontend",
+    StaticFiles(directory="frontend"),
+    name="frontend"
+)
+
+
 @app.get("/")
 def home():
     """
     Rota inicial do sistema.
 
-    Serve para verificar se o Thux está online.
+    Agora ela entrega a interface visual do Thux.
     """
-    return {
-        "status": "Thux online",
-        "message": "O núcleo inicial do Thux-AI está funcionando."
-    }
+    return FileResponse("frontend/index.html")
 
 
 @app.get("/health")
