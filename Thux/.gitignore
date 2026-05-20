@@ -40,3 +40,7 @@ Thumbs.db
 # Configurações de editores
 .vscode/
 .idea/
+# Credenciais privadas
+credentials/
+google_drive_credentials.json
+token.json
