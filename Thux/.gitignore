@@ -44,3 +44,6 @@ Thumbs.db
 credentials/
 google_drive_credentials.json
 token.json
+
+# Downloads temporários do Google Drive
+data/temp/
