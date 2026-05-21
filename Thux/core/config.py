@@ -44,7 +44,7 @@ CORE_DISCIPLINES = [
 # Configurações gerais de resposta
 DEFAULT_LANGUAGE = "pt-BR"
 MAX_RESPONSE_TOKENS = 1200
-TEMPERATURE = 0.7
+TEMPERATURE = 0.3
 
 # Pastas principais do projeto
 DATA_DIR = "data"
