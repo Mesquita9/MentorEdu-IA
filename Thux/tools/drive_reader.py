@@ -4,7 +4,16 @@ Leitor do Google Drive para o Thux.
 Este arquivo permite que o Thux acesse a biblioteca privada no Google Drive
 usando uma conta de serviço.
 
-Funções desta versão:
+Funciona em dois modos:
+
+1. Ambiente local:
+   - usa o arquivo credentials/google_drive_credentials.json
+
+2. Ambiente em nuvem, como Render:
+   - usa a variável de ambiente GOOGLE_DRIVE_CREDENTIALS_JSON
+   - essa variável deve conter o conteúdo completo do JSON da conta de serviço
+
+Funções:
 - conectar ao Google Drive;
 - encontrar a pasta principal Thux-AI;
 - mapear disciplinas e níveis;
@@ -15,6 +24,7 @@ Funções desta versão:
 
 import io
 import os
+import json
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -28,10 +38,15 @@ from pdf_reader import get_page_count, extract_pdf_preview
 CREDENTIALS_PATH = "credentials/google_drive_credentials.json"
 
 
+# Nome da variável de ambiente usada no Render.
+# Ela deve conter o JSON completo da conta de serviço.
+GOOGLE_DRIVE_CREDENTIALS_ENV = "GOOGLE_DRIVE_CREDENTIALS_JSON"
+
+
 # Permissão apenas de leitura no Google Drive.
-SCOPES = [
+SCOPES = (
     "https://www.googleapis.com/auth/drive.readonly",
-]
+)
 
 
 # Nome da pasta principal no Google Drive.
@@ -39,26 +54,74 @@ ROOT_FOLDER_NAME = "Thux-AI"
 
 
 # Disciplinas esperadas na biblioteca.
-DISCIPLINES = [
+DISCIPLINES = (
     "Matemática",
     "Física",
-]
+)
 
 
 # Níveis esperados dentro de cada disciplina.
-LEVELS = [
+LEVELS = (
     "Elementar",
     "Avançado",
-]
+)
 
 
 # Pastas de exercícios e materiais práticos.
-MATERIAL_FOLDERS = [
+# Ainda está preparado para uso futuro.
+MATERIAL_FOLDERS = (
     "Listas",
-]
+)
+
 
 # Pasta local para downloads temporários.
 TEMP_DIR = "data/temp"
+
+
+def get_drive_credentials():
+    """
+    Carrega as credenciais do Google Drive.
+
+    Prioridade:
+    1. Se existir GOOGLE_DRIVE_CREDENTIALS_JSON, usa a variável de ambiente.
+       Esse será o modo usado no Render.
+
+    2. Se não existir variável de ambiente, usa o arquivo local:
+       credentials/google_drive_credentials.json
+    """
+
+    credentials_json = os.getenv(GOOGLE_DRIVE_CREDENTIALS_ENV)
+
+    if credentials_json:
+        try:
+            credentials_info = json.loads(credentials_json)
+
+            credentials = service_account.Credentials.from_service_account_info(
+                credentials_info,
+                scopes=SCOPES,
+            )
+
+            return credentials
+
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "A variável GOOGLE_DRIVE_CREDENTIALS_JSON existe, "
+                "mas não contém um JSON válido."
+            ) from error
+
+    if not os.path.exists(CREDENTIALS_PATH):
+        raise FileNotFoundError(
+            "Credenciais do Google Drive não encontradas.\n"
+            f"Modo local esperado: {CREDENTIALS_PATH}\n"
+            f"Modo nuvem esperado: variável {GOOGLE_DRIVE_CREDENTIALS_ENV}"
+        )
+
+    credentials = service_account.Credentials.from_service_account_file(
+        CREDENTIALS_PATH,
+        scopes=SCOPES,
+    )
+
+    return credentials
 
 
 def get_drive_service():
@@ -66,10 +129,7 @@ def get_drive_service():
     Cria uma conexão autenticada com o Google Drive.
     """
 
-    credentials = service_account.Credentials.from_service_account_file(
-        CREDENTIALS_PATH,
-        scopes=SCOPES,
-    )
+    credentials = get_drive_credentials()
 
     service = build(
         "drive",
@@ -204,7 +264,6 @@ def download_drive_file(file_id: str, file_name: str, output_dir: str = TEMP_DIR
 
     service = get_drive_service()
 
-    # Garante que a pasta temporária existe.
     os.makedirs(output_dir, exist_ok=True)
 
     output_path = os.path.join(output_dir, file_name)
