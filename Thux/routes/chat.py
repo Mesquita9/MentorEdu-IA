@@ -1,63 +1,108 @@
 """
-Rota de chat do Thux.
+Rotas de chat do Thux.
 
-Este arquivo recebe mensagens do usuário e devolve respostas geradas pelo núcleo do Thux.
-Ele não define a personalidade e não conversa diretamente com a Groq.
-Quem faz isso é o core/brain.py.
+Este arquivo recebe mensagens do frontend e envia para o cérebro do Thux.
+
+Fluxo:
+- usuário envia mensagem;
+- Thux tenta responder usando a biblioteca própria;
+- se a biblioteca falhar, usa o chat básico como fallback;
+- retorna resposta em JSON.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from core.brain import ask_thux
+from core.brain import ask_thux, ask_thux_with_knowledge
 
 
-# Cria um roteador separado para as rotas de chat
 router = APIRouter()
 
 
 class ChatRequest(BaseModel):
     """
-    Modelo da mensagem recebida pelo chat.
+    Modelo esperado para mensagens do chat.
 
-    Exemplo esperado:
+    Aceita:
     {
-        "message": "Me explica função afim"
+        "message": "texto do usuário"
     }
     """
 
-    message: str
+    message: str | None = None
+    text: str | None = None
+    prompt: str | None = None
 
 
-class ChatResponse(BaseModel):
+def extract_user_message(data: dict) -> str:
     """
-    Modelo da resposta enviada pelo Thux.
+    Extrai a mensagem do usuário aceitando nomes diferentes de campo.
+    """
 
-    Exemplo de saída:
+    user_message = (
+        data.get("message")
+        or data.get("text")
+        or data.get("prompt")
+    )
+
+    if user_message is None:
+        return ""
+
+    return str(user_message).strip()
+
+
+@router.post("/chat")
+async def chat(request: Request):
+    """
+    Endpoint principal do chat.
+
+    Espera receber JSON como:
     {
-        "response": "Função afim é..."
+        "message": "texto do usuário"
     }
-    """
 
-    response: str
-
-
-@router.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
-    """
-    Recebe uma mensagem do usuário e retorna uma resposta do Thux.
+    Retorna:
+    {
+        "response": "resposta do Thux"
+    }
     """
 
     try:
-        # Envia a mensagem para o cérebro do Thux
-        response = ask_thux(request.message)
+        data = await request.json()
 
-        # Devolve a resposta no formato esperado
-        return ChatResponse(response=response)
+    except Exception:
+        return {
+            "error": "JSON inválido.",
+            "response": "Não consegui ler tua mensagem, pai. Manda em JSON certinho."
+        }
 
-    except Exception as error:
-        # Se algo der errado, devolve erro claro para facilitar correção
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao gerar resposta do Thux: {str(error)}"
-        )
+    user_message = extract_user_message(data)
+
+    if not user_message:
+        return {
+            "error": "Mensagem vazia.",
+            "response": "A mensagem veio vazia, pai."
+        }
+
+    try:
+        response = ask_thux_with_knowledge(user_message)
+
+    except Exception as knowledge_error:
+        print("\nAviso: falha ao usar biblioteca do Thux.")
+        print(f"Erro: {knowledge_error}")
+        print("Usando resposta básica como fallback.\n")
+
+        response = ask_thux(user_message)
+
+    return {
+        "response": response
+    }
+
+
+@router.post("/api/chat")
+async def api_chat(request: Request):
+    """
+    Alias para compatibilidade com frontends que chamem /api/chat.
+    """
+
+    return await chat(request)
