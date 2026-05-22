@@ -29,8 +29,8 @@ messageInput.addEventListener("keydown", (event) => {
 });
 
 messageInput.addEventListener("input", () => {
-    messageInput.style.height = "68px";
-    messageInput.style.height = `${Math.min(messageInput.scrollHeight, 160)}px`;
+    messageInput.style.height = "64px";
+    messageInput.style.height = `${Math.min(messageInput.scrollHeight, 150)}px`;
 });
 
 function scrollToBottom() {
@@ -54,7 +54,7 @@ function addMessage(content, type, options = {}) {
 
         row.innerHTML = `
             <div class="avatar">
-                <img src="/frontend/assets/thux-logo.png" alt="Thux" />
+                <img src="/frontend/assets/thux-avatar.png" alt="Thux" />
             </div>
 
             <div class="message-bubble thux-bubble">
@@ -108,7 +108,7 @@ async function sendMessage() {
     addMessage(message, "user");
 
     messageInput.value = "";
-    messageInput.style.height = "68px";
+    messageInput.style.height = "64px";
     plusMenu.classList.remove("open");
 
     const loadingMessage = createLoadingMessage();
