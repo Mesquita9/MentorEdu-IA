@@ -1,14 +1,3 @@
-/*
-    Script principal da interface do Thux.
-
-    Funções:
-    - abrir e fechar menu do botão +
-    - enviar mensagens para /chat
-    - renderizar mensagens
-    - controlar loading
-    - manter chat na última mensagem
-*/
-
 const chatPanel = document.getElementById("chatPanel");
 const messageInput = document.getElementById("messageInput");
 const sendButton = document.getElementById("sendButton");
@@ -17,11 +6,9 @@ const plusMenu = document.getElementById("plusMenu");
 
 let isSending = false;
 
-
 plusButton.addEventListener("click", () => {
     plusMenu.classList.toggle("open");
 });
-
 
 document.addEventListener("click", (event) => {
     const clickedInsideMenu = plusMenu.contains(event.target);
@@ -32,9 +19,7 @@ document.addEventListener("click", (event) => {
     }
 });
 
-
 sendButton.addEventListener("click", sendMessage);
-
 
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -43,39 +28,42 @@ messageInput.addEventListener("keydown", (event) => {
     }
 });
 
-
 messageInput.addEventListener("input", () => {
-    messageInput.style.height = "auto";
-    messageInput.style.height = `${messageInput.scrollHeight}px`;
+    messageInput.style.height = "68px";
+    messageInput.style.height = `${Math.min(messageInput.scrollHeight, 160)}px`;
 });
-
 
 function scrollToBottom() {
     chatPanel.scrollTop = chatPanel.scrollHeight;
 }
 
-
-function addMessage(author, content, type, options = {}) {
-    const messageElement = document.createElement("div");
-    messageElement.classList.add("message");
+function addMessage(content, type, options = {}) {
+    const row = document.createElement("div");
+    row.classList.add("message-row");
 
     if (type === "user") {
-        messageElement.classList.add("user-message");
+        row.classList.add("user-row");
+
+        row.innerHTML = `
+            <div class="message-bubble user-bubble">
+                <div class="message-content"></div>
+            </div>
+        `;
     } else {
-        messageElement.classList.add("thux-message");
+        row.classList.add("thux-row");
+
+        row.innerHTML = `
+            <div class="avatar">
+                <img src="/frontend/assets/thux-logo.png" alt="Thux" />
+            </div>
+
+            <div class="message-bubble thux-bubble">
+                <div class="message-content"></div>
+            </div>
+        `;
     }
 
-    const tag = options.tag || (type === "user" ? "entrada" : "resposta");
-
-    messageElement.innerHTML = `
-        <div class="message-meta">
-            <span class="message-author">${author}</span>
-            <span class="message-tag">${tag}</span>
-        </div>
-        <div class="message-content"></div>
-    `;
-
-    const contentElement = messageElement.querySelector(".message-content");
+    const contentElement = row.querySelector(".message-content");
 
     if (options.html) {
         contentElement.innerHTML = content;
@@ -83,48 +71,32 @@ function addMessage(author, content, type, options = {}) {
         contentElement.textContent = content;
     }
 
-    chatPanel.appendChild(messageElement);
+    chatPanel.appendChild(row);
     scrollToBottom();
 
-    return messageElement;
+    return row;
 }
-
 
 function createLoadingMessage() {
     return addMessage(
-        "Thux",
-        `
-            <span>Consultando contexto</span>
-            <span class="loading-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </span>
-        `,
+        `Pensando<span class="loading-dots"><span></span><span></span><span></span></span>`,
         "thux",
         {
-            tag: "processando",
             html: true,
         }
     );
 }
 
-
 function setSendingState(state) {
     isSending = state;
     sendButton.disabled = state;
     messageInput.disabled = state;
-    sendButton.querySelector("span").textContent = state ? "..." : "Enviar";
+    sendButton.textContent = state ? "…" : "➤";
 }
-
 
 function getFriendlyErrorMessage() {
-    return (
-        "Deu ruim ao falar com o Thux. Pode ser API, servidor ou deploy ainda acordando. " +
-        "Tenta de novo em alguns segundos; se persistir, a gente caça o erro nos logs."
-    );
+    return "Deu ruim ao falar com o Thux. Tenta de novo em alguns segundos.";
 }
-
 
 async function sendMessage() {
     const message = messageInput.value.trim();
@@ -133,10 +105,10 @@ async function sendMessage() {
         return;
     }
 
-    addMessage("Você", message, "user");
+    addMessage(message, "user");
 
     messageInput.value = "";
-    messageInput.style.height = "auto";
+    messageInput.style.height = "68px";
     plusMenu.classList.remove("open");
 
     const loadingMessage = createLoadingMessage();
@@ -161,15 +133,10 @@ async function sendMessage() {
 
         const data = await response.json();
 
-        loadingMessage.querySelector(".message-tag").textContent = "resposta";
         loadingContent.textContent = data.response || "Recebi uma resposta vazia do servidor.";
-
     } catch (error) {
         console.error(error);
-
-        loadingMessage.querySelector(".message-tag").textContent = "erro";
         loadingContent.textContent = getFriendlyErrorMessage();
-
     } finally {
         setSendingState(false);
         messageInput.focus();
