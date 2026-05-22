@@ -1,11 +1,12 @@
 /*
     Script principal da interface do Thux.
 
-    Funções deste arquivo:
-    - abrir e fechar o menu do botão +
-    - enviar mensagens para a rota /chat
-    - mostrar mensagens do usuário e do Thux na tela
-    - manter o chat rolando para a última mensagem
+    Funções:
+    - abrir e fechar menu do botão +
+    - enviar mensagens para /chat
+    - renderizar mensagens
+    - controlar loading
+    - manter chat na última mensagem
 */
 
 const chatPanel = document.getElementById("chatPanel");
@@ -14,14 +15,14 @@ const sendButton = document.getElementById("sendButton");
 const plusButton = document.getElementById("plusButton");
 const plusMenu = document.getElementById("plusMenu");
 
+let isSending = false;
 
-// Abre ou fecha o menu do botão +
+
 plusButton.addEventListener("click", () => {
     plusMenu.classList.toggle("open");
 });
 
 
-// Fecha o menu + quando clicar fora dele
 document.addEventListener("click", (event) => {
     const clickedInsideMenu = plusMenu.contains(event.target);
     const clickedPlusButton = plusButton.contains(event.target);
@@ -32,12 +33,9 @@ document.addEventListener("click", (event) => {
 });
 
 
-// Envia mensagem ao clicar no botão Enviar
 sendButton.addEventListener("click", sendMessage);
 
 
-// Envia mensagem ao apertar Enter
-// Shift + Enter quebra linha normalmente
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -46,22 +44,18 @@ messageInput.addEventListener("keydown", (event) => {
 });
 
 
-// Ajusta a altura do textarea conforme o texto cresce
 messageInput.addEventListener("input", () => {
     messageInput.style.height = "auto";
     messageInput.style.height = `${messageInput.scrollHeight}px`;
 });
 
 
-function addMessage(author, content, type) {
-    /*
-        Adiciona uma mensagem no painel do chat.
+function scrollToBottom() {
+    chatPanel.scrollTop = chatPanel.scrollHeight;
+}
 
-        author: nome de quem enviou
-        content: texto da mensagem
-        type: "user" ou "thux"
-    */
 
+function addMessage(author, content, type, options = {}) {
     const messageElement = document.createElement("div");
     messageElement.classList.add("message");
 
@@ -71,48 +65,84 @@ function addMessage(author, content, type) {
         messageElement.classList.add("thux-message");
     }
 
+    const tag = options.tag || (type === "user" ? "entrada" : "resposta");
+
     messageElement.innerHTML = `
-        <div class="message-author">${author}</div>
+        <div class="message-meta">
+            <span class="message-author">${author}</span>
+            <span class="message-tag">${tag}</span>
+        </div>
         <div class="message-content"></div>
     `;
 
     const contentElement = messageElement.querySelector(".message-content");
-    contentElement.textContent = content;
+
+    if (options.html) {
+        contentElement.innerHTML = content;
+    } else {
+        contentElement.textContent = content;
+    }
 
     chatPanel.appendChild(messageElement);
+    scrollToBottom();
 
-    // Mantém o chat sempre na última mensagem
-    chatPanel.scrollTop = chatPanel.scrollHeight;
+    return messageElement;
+}
+
+
+function createLoadingMessage() {
+    return addMessage(
+        "Thux",
+        `
+            <span>Consultando contexto</span>
+            <span class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
+        `,
+        "thux",
+        {
+            tag: "processando",
+            html: true,
+        }
+    );
+}
+
+
+function setSendingState(state) {
+    isSending = state;
+    sendButton.disabled = state;
+    messageInput.disabled = state;
+    sendButton.querySelector("span").textContent = state ? "..." : "Enviar";
+}
+
+
+function getFriendlyErrorMessage() {
+    return (
+        "Deu ruim ao falar com o Thux. Pode ser API, servidor ou deploy ainda acordando. " +
+        "Tenta de novo em alguns segundos; se persistir, a gente caça o erro nos logs."
+    );
 }
 
 
 async function sendMessage() {
-    /*
-        Envia a mensagem do usuário para o backend do Thux.
-    */
-
     const message = messageInput.value.trim();
 
-    if (!message) {
+    if (!message || isSending) {
         return;
     }
 
-    // Mostra a mensagem do usuário na tela
     addMessage("Você", message, "user");
 
-    // Limpa o campo de texto
     messageInput.value = "";
     messageInput.style.height = "auto";
-
-    // Fecha o menu +, caso esteja aberto
     plusMenu.classList.remove("open");
 
-    // Mostra uma mensagem temporária enquanto o Thux responde
-    addMessage("Thux", "Pensando...", "thux");
-
-    // Pega a última mensagem, que é o "Pensando..."
-    const loadingMessage = chatPanel.lastElementChild;
+    const loadingMessage = createLoadingMessage();
     const loadingContent = loadingMessage.querySelector(".message-content");
+
+    setSendingState(true);
 
     try {
         const response = await fetch("/chat", {
@@ -126,16 +156,23 @@ async function sendMessage() {
         });
 
         if (!response.ok) {
-            throw new Error("Erro na resposta do servidor.");
+            throw new Error(`Erro HTTP ${response.status}`);
         }
 
         const data = await response.json();
 
-        // Substitui "Pensando..." pela resposta real
-        loadingContent.textContent = data.response;
+        loadingMessage.querySelector(".message-tag").textContent = "resposta";
+        loadingContent.textContent = data.response || "Recebi uma resposta vazia do servidor.";
 
     } catch (error) {
-        loadingContent.textContent =
-            "Deu ruim ao falar com o Thux. Provavelmente é API, servidor ou rota quebrando. Vamos caçar esse erro com calma.";
+        console.error(error);
+
+        loadingMessage.querySelector(".message-tag").textContent = "erro";
+        loadingContent.textContent = getFriendlyErrorMessage();
+
+    } finally {
+        setSendingState(false);
+        messageInput.focus();
+        scrollToBottom();
     }
 }

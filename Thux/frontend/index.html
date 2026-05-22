@@ -2,16 +2,12 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
-
-    <!-- Faz a página se adaptar ao celular, notebook e desktop -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Thux</title>
+    <title>Thux-AI</title>
 
-    <!-- Arquivo de estilos da interface -->
     <link rel="stylesheet" href="/frontend/style.css" />
 
-    <!-- KaTeX: biblioteca para renderizar fórmulas em LaTeX futuramente -->
     <link
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
@@ -19,79 +15,109 @@
 </head>
 
 <body>
-    <main class="app-container">
+    <div class="background-grid"></div>
+    <div class="background-glow glow-one"></div>
+    <div class="background-glow glow-two"></div>
 
-        <!-- Cabeçalho principal do Thux -->
-        <header class="thux-header">
-            <div class="thux-logo-area">
-                <div class="thux-logo">
-                    🐧
+    <main class="app-shell">
+        <section class="hero-card">
+            <div class="brand-area">
+                <div class="logo-frame">
+                    <img
+                        src="/frontend/assets/thux-logo.png"
+                        alt="Logo do Thux-AI"
+                        class="thux-logo-img"
+                    />
                 </div>
 
-                <div>
-                    <h1>Thux</h1>
-                    <p>Ferramenta digital inteligente para estudo e ensino.</p>
+                <div class="brand-text">
+                    <div class="eyebrow">Thux-AI</div>
+                    <h1>Estudo com fonte, contexto e sem enrolação.</h1>
+                    <p>
+                        Um assistente educacional em modo grafite: consulta biblioteca,
+                        explica com didática e mantém o pé no chão.
+                    </p>
                 </div>
             </div>
 
-            <div class="status-pill">
-                online
-            </div>
-        </header>
-
-        <!-- Área onde as mensagens aparecem -->
-        <section class="chat-panel" id="chatPanel">
-            <div class="message thux-message">
-                <div class="message-author">Thux</div>
-                <div class="message-content">
-                    Fala. Estou online. Manda o conteúdo que a gente destrincha sem frescura.
-                </div>
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <span>Online</span>
             </div>
         </section>
 
-        <!-- Área inferior do chat -->
-        <footer class="chat-input-area">
+        <section class="chat-card">
+            <header class="chat-topbar">
+                <div class="terminal-controls">
+                    <span class="terminal-dot dot-red"></span>
+                    <span class="terminal-dot dot-yellow"></span>
+                    <span class="terminal-dot dot-green"></span>
+                </div>
 
-            <!-- Menu flutuante do botão + -->
-            <div class="plus-menu" id="plusMenu">
-                <button type="button" class="plus-menu-item">
-                    Enviar PDF
-                    <span>base de conhecimento</span>
-                </button>
+                <div class="chat-title">
+                    <span>~/thux-ai/chat</span>
+                </div>
 
-                <button type="button" class="plus-menu-item">
-                    Enviar imagem
-                    <span>apoio visual</span>
-                </button>
+                <div class="chat-mode">
+                    Biblioteca ativa
+                </div>
+            </header>
 
-                <button type="button" class="plus-menu-item">
-                    Enviar anotação
-                    <span>contexto rápido</span>
-                </button>
-            </div>
+            <section class="chat-panel" id="chatPanel">
+                <div class="message thux-message">
+                    <div class="message-meta">
+                        <span class="message-author">Thux</span>
+                        <span class="message-tag">sistema</span>
+                    </div>
 
-            <div class="input-wrapper">
-                <!-- Botão para abrir opções futuras -->
-                <button type="button" class="icon-button" id="plusButton">
-                    +
-                </button>
+                    <div class="message-content">
+                        Fala. Estou online. Manda o conteúdo que a gente destrincha sem frescura.
+                    </div>
+                </div>
+            </section>
 
-                <!-- Campo de texto do usuário -->
-                <textarea
-                    id="messageInput"
-                    placeholder="Pergunte algo ao Thux..."
-                    rows="1"
-                ></textarea>
+            <footer class="chat-input-area">
+                <div class="plus-menu" id="plusMenu">
+                    <button type="button" class="plus-menu-item">
+                        <strong>Enviar PDF</strong>
+                        <span>em breve: base de conhecimento local</span>
+                    </button>
 
-                <!-- Botão de envio -->
-                <button type="button" class="send-button" id="sendButton">
-                    Enviar
-                </button>
-            </div>
-        </footer>
+                    <button type="button" class="plus-menu-item">
+                        <strong>Enviar imagem</strong>
+                        <span>em breve: apoio visual</span>
+                    </button>
+
+                    <button type="button" class="plus-menu-item">
+                        <strong>Enviar anotação</strong>
+                        <span>em breve: contexto rápido</span>
+                    </button>
+                </div>
+
+                <div class="input-wrapper">
+                    <button
+                        type="button"
+                        class="icon-button"
+                        id="plusButton"
+                        aria-label="Abrir opções"
+                    >
+                        +
+                    </button>
+
+                    <textarea
+                        id="messageInput"
+                        placeholder="Pergunte algo ao Thux..."
+                        rows="1"
+                    ></textarea>
+
+                    <button type="button" class="send-button" id="sendButton">
+                        <span>Enviar</span>
+                    </button>
+                </div>
+            </footer>
+        </section>
     </main>
 
-    <!-- Script da interface -->
     <script src="/frontend/script.js"></script>
 </body>
 </html>
