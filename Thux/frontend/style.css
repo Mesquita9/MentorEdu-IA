@@ -202,7 +202,7 @@ body {
 
 .chat-panel {
     position: absolute;
-    inset: 138px 70px 112px 70px;
+    inset: 124px 110px 108px 110px;
     overflow-y: auto;
     padding: 10px 8px 26px;
     scroll-behavior: smooth;
@@ -226,8 +226,8 @@ body {
 .message-row {
     display: flex;
     align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 22px;
+    gap: 10px;
+    margin-bottom: 18px;
 }
 
 .thux-row {
@@ -236,16 +236,18 @@ body {
 
 .user-row {
     justify-content: flex-end;
+    padding-right: 42px;
 }
 
 .avatar {
-    width: 46px;
-    height: 46px;
+    width: 42px;
+    height: 42px;
     flex: 0 0 auto;
     display: grid;
     place-items: center;
     border-radius: 999px;
     overflow: hidden;
+    margin-top: 2px;
     background: rgba(255, 255, 255, 0.045);
     border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
@@ -258,9 +260,10 @@ body {
 }
 
 .message-bubble {
-    max-width: min(560px, 66%);
-    padding: 18px 24px;
-    border-radius: 24px;
+    width: fit-content;
+    max-width: min(520px, 62%);
+    padding: 15px 20px;
+    border-radius: 20px;
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035)),
         #282828;
@@ -270,10 +273,16 @@ body {
         0 18px 34px rgba(0, 0, 0, 0.2);
 }
 
+.chat-panel .message-row:first-child .message-bubble {
+    max-width: 340px;
+    padding: 15px 20px;
+}
+
 .user-bubble {
-    max-width: min(470px, 60%);
-    border-radius: 22px;
-    padding: 16px 22px;
+    width: fit-content;
+    max-width: min(380px, 48%);
+    border-radius: 18px;
+    padding: 13px 18px;
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045)),
         #303030;
@@ -281,48 +290,49 @@ body {
 
 .message-content {
     color: rgba(255, 255, 255, 0.92);
-    font-size: 1rem;
-    line-height: 1.45;
+    font-size: 0.95rem;
+    line-height: 1.4;
     white-space: pre-wrap;
     word-break: break-word;
+    text-align: left;
 }
 
 /* INPUT */
 
 .chat-input-area {
     position: absolute;
-    left: 86px;
-    right: 86px;
-    bottom: 34px;
-    height: 68px;
+    left: 110px;
+    right: 110px;
+    bottom: 32px;
+    height: 66px;
     display: flex;
     align-items: center;
     gap: 14px;
 }
 
 .plus-button {
-    width: 54px;
-    height: 54px;
+    width: 52px;
+    height: 52px;
     flex: 0 0 auto;
-    border-radius: 20px;
+    border-radius: 19px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
         #252525;
     color: rgba(255, 255, 255, 0.86);
-    font-size: 1.55rem;
+    font-size: 1.5rem;
     cursor: pointer;
 }
 
 textarea {
     flex: 1;
-    height: 64px;
+    height: 62px;
     max-height: 150px;
     resize: none;
     border: none;
     outline: none;
     border-radius: 999px;
-    padding: 19px 30px;
+    padding: 18px 28px;
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
         #232323;
@@ -340,16 +350,16 @@ textarea::placeholder {
 }
 
 .send-button {
-    width: 64px;
-    height: 64px;
+    width: 62px;
+    height: 62px;
     flex: 0 0 auto;
-    border-radius: 23px;
+    border-radius: 22px;
     border: none;
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07)),
         #4a4a4a;
     color: white;
-    font-size: 1.45rem;
+    font-size: 1.4rem;
     cursor: pointer;
     box-shadow:
         inset 0 1px rgba(255, 255, 255, 0.18),
@@ -367,7 +377,7 @@ textarea:disabled {
 .plus-menu {
     position: absolute;
     left: 0;
-    bottom: 78px;
+    bottom: 76px;
     width: 230px;
     display: none;
     padding: 8px;
@@ -411,7 +421,8 @@ textarea:disabled {
     height: 6px;
     display: block;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.18);
     animation: pulse 1s infinite ease-in-out;
 }
 
