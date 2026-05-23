@@ -20,56 +20,6 @@
                 />
             </div>
 
-            <nav class="sidebar-panel">
-                <div class="sidebar-section">
-                    <span class="section-label">Modo de aula</span>
-
-                    <div class="mode-buttons">
-                        <button class="mode-button active" data-mode="Física">
-                            <span>Física</span>
-                        </button>
-
-                        <button class="mode-button" data-mode="Matemática">
-                            <span>Matemática</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="sidebar-section">
-                    <span class="section-label">Conversas</span>
-
-                    <button class="side-action" id="newChatButton">
-                        Nova conversa
-                    </button>
-
-                    <button class="side-action soon-button">
-                        Salvar conversa
-                    </button>
-
-                    <button class="side-action soon-button">
-                        Exportar PDF
-                    </button>
-
-                    <button class="side-action danger soon-button">
-                        Excluir conversa
-                    </button>
-                </div>
-
-                <div class="sidebar-section history-preview">
-                    <span class="section-label">Histórico</span>
-
-                    <div class="history-group">
-                        <strong>Física</strong>
-                        <p>Aula atual</p>
-                    </div>
-
-                    <div class="history-group muted-history">
-                        <strong>Matemática</strong>
-                        <p>Nenhuma conversa aberta</p>
-                    </div>
-                </div>
-            </nav>
-
             <div class="sidebar-footer">
                 <div class="sidebar-line"></div>
 
@@ -85,12 +35,36 @@
                 <header class="chat-header">
                     <h1>Thux-AI</h1>
                     <div class="header-glow"></div>
-                    <p id="modeSubtitle">modo Física · reprogramando o ensino da física</p>
+                    <p id="modeSubtitle">reprogramando o ensino da física</p>
                 </header>
 
-                <section class="chat-panel" id="chatPanel"></section>
+                <section class="start-screen" id="startScreen">
+                    <div class="start-card">
+                        <span class="start-kicker">Modo de aula</span>
 
-                <footer class="chat-input-area">
+                        <h2>O que vamos conduzir hoje?</h2>
+
+                        <p>
+                            Escolha a frente da aula para o Thux entrar no contexto certo.
+                        </p>
+
+                        <div class="discipline-grid">
+                            <button class="discipline-card" data-mode="Física">
+                                <strong>Física</strong>
+                                <span>Demonstrações, problemas e dúvidas ao vivo.</span>
+                            </button>
+
+                            <button class="discipline-card" data-mode="Matemática">
+                                <strong>Matemática</strong>
+                                <span>Funções, gráficos, conjuntos e exercícios.</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="chat-panel hidden" id="chatPanel"></section>
+
+                <footer class="chat-input-area hidden" id="chatInputArea">
                     <button type="button" class="plus-button" id="plusButton">
                         +
                     </button>
@@ -106,13 +80,11 @@
                     </button>
 
                     <div class="plus-menu" id="plusMenu">
-                        <button type="button" class="soon-button">Enviar PDF</button>
-                        <button type="button" class="soon-button">Enviar imagem</button>
-                        <button type="button" class="soon-button">Enviar anotação</button>
+                        <button type="button">Salvar conversa</button>
+                        <button type="button">Exportar PDF</button>
+                        <button type="button">Nova conversa</button>
                     </div>
                 </footer>
-
-                <div class="toast" id="toast"></div>
             </div>
         </section>
     </main>

@@ -3,12 +3,19 @@ const messageInput = document.getElementById("messageInput");
 const sendButton = document.getElementById("sendButton");
 const plusButton = document.getElementById("plusButton");
 const plusMenu = document.getElementById("plusMenu");
+const startScreen = document.getElementById("startScreen");
+const chatInputArea = document.getElementById("chatInputArea");
 const modeSubtitle = document.getElementById("modeSubtitle");
-const newChatButton = document.getElementById("newChatButton");
-const toast = document.getElementById("toast");
 
 let isSending = false;
-let selectedDiscipline = "Física";
+let selectedDiscipline = null;
+
+document.querySelectorAll(".discipline-card").forEach((button) => {
+    button.addEventListener("click", () => {
+        selectedDiscipline = button.dataset.mode;
+        openClassMode(selectedDiscipline);
+    });
+});
 
 plusButton.addEventListener("click", () => {
     plusMenu.classList.toggle("open");
@@ -21,37 +28,6 @@ document.addEventListener("click", (event) => {
     if (!clickedInsideMenu && !clickedPlusButton) {
         plusMenu.classList.remove("open");
     }
-});
-
-document.querySelectorAll(".mode-button").forEach((button) => {
-    button.addEventListener("click", () => {
-        const mode = button.dataset.mode;
-
-        selectedDiscipline = mode;
-
-        document.querySelectorAll(".mode-button").forEach((item) => {
-            item.classList.remove("active");
-        });
-
-        button.classList.add("active");
-
-        modeSubtitle.textContent =
-            mode === "Física"
-                ? "modo Física · reprogramando o ensino da física"
-                : "modo Matemática · apoio para demonstrações e dúvidas";
-
-        startNewChat();
-    });
-});
-
-document.querySelectorAll(".soon-button").forEach((button) => {
-    button.addEventListener("click", () => {
-        showToast("Função planejada para a próxima versão.");
-    });
-});
-
-newChatButton.addEventListener("click", () => {
-    startNewChat();
 });
 
 sendButton.addEventListener("click", sendMessage);
@@ -68,31 +44,30 @@ messageInput.addEventListener("input", () => {
     messageInput.style.height = `${Math.min(messageInput.scrollHeight, 150)}px`;
 });
 
-function showToast(message) {
-    toast.textContent = message;
-    toast.classList.add("show");
+function openClassMode(mode) {
+    startScreen.classList.add("hidden");
+    chatPanel.classList.remove("hidden");
+    chatInputArea.classList.remove("hidden");
 
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, 2200);
+    modeSubtitle.textContent =
+        mode === "Física"
+            ? "modo Física · reprogramando o ensino da física"
+            : "modo Matemática · apoio para demonstrações e dúvidas";
+
+    chatPanel.innerHTML = "";
+
+    addMessage(
+        mode === "Física"
+            ? "Modo Física ativado.\nPronto para demonstrações, problemas e dúvidas da aula."
+            : "Modo Matemática ativado.\nPronto para funções, gráficos, conjuntos e exercícios.",
+        "thux"
+    );
+
+    messageInput.focus();
 }
 
 function scrollToBottom() {
     chatPanel.scrollTop = chatPanel.scrollHeight;
-}
-
-function getIntroMessage() {
-    if (selectedDiscipline === "Física") {
-        return "Modo Física ativado.\nPronto para demonstrações, dúvidas e exemplos de aula.";
-    }
-
-    return "Modo Matemática ativado.\nPronto para funções, conjuntos, gráficos e exercícios.";
-}
-
-function startNewChat() {
-    chatPanel.innerHTML = "";
-    addMessage(getIntroMessage(), "thux");
-    messageInput.focus();
 }
 
 function addMessage(content, type, options = {}) {
@@ -152,10 +127,6 @@ function setSendingState(state) {
     sendButton.textContent = state ? "…" : "➤";
 }
 
-function getFriendlyErrorMessage() {
-    return "Deu ruim ao falar com o Thux. Tenta de novo em alguns segundos.";
-}
-
 async function sendMessage() {
     const message = messageInput.value.trim();
 
@@ -196,12 +167,11 @@ async function sendMessage() {
             data.response || "Recebi uma resposta vazia do servidor.";
     } catch (error) {
         console.error(error);
-        loadingContent.textContent = getFriendlyErrorMessage();
+        loadingContent.textContent =
+            "Deu ruim ao falar com o Thux. Tenta de novo em alguns segundos.";
     } finally {
         setSendingState(false);
         messageInput.focus();
         scrollToBottom();
     }
 }
-
-startNewChat();
