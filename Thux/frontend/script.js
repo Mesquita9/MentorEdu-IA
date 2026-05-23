@@ -1,3 +1,8 @@
+const sidebar = document.querySelector(".sidebar");
+const teacherTools = document.getElementById("teacherTools");
+const sidebarModeLabel = document.getElementById("sidebarModeLabel");
+const newChatButton = document.getElementById("newChatButton");
+
 const startScreen = document.getElementById("startScreen");
 const chatScreen = document.getElementById("chatScreen");
 const chatPanel = document.getElementById("chatPanel");
@@ -22,7 +27,17 @@ document.querySelectorAll(".choice-button").forEach((button) => {
 backButton.addEventListener("click", () => {
     chatScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
+
+    sidebar.classList.remove("chat-active");
+    teacherTools.classList.add("hidden");
+
     selectedDiscipline = null;
+    chatPanel.innerHTML = "";
+});
+
+newChatButton.addEventListener("click", () => {
+    chatPanel.innerHTML = "";
+    messageInput.focus();
 });
 
 plusButton.addEventListener("click", () => {
@@ -71,20 +86,16 @@ function openClassMode(mode) {
     startScreen.classList.add("hidden");
     chatScreen.classList.remove("hidden");
 
+    sidebar.classList.add("chat-active");
+    teacherTools.classList.remove("hidden");
+    sidebarModeLabel.textContent = mode;
+
     modeSubtitle.textContent =
         mode === "Física"
             ? "modo Física · reprogramando o ensino da física"
             : "modo Matemática · apoio para demonstrações e dúvidas";
 
     chatPanel.innerHTML = "";
-
-    addMessage(
-        mode === "Física"
-            ? "Modo Física ativado.\nPronto para demonstrações, problemas e dúvidas da aula."
-            : "Modo Matemática ativado.\nPronto para funções, gráficos, conjuntos e exercícios.",
-        "thux"
-    );
-
     messageInput.focus();
 }
 

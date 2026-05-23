@@ -20,6 +20,31 @@
                 />
             </div>
 
+            <nav class="teacher-tools hidden" id="teacherTools">
+                <div class="active-mode-box">
+                    <span>Modo de aula</span>
+                    <strong id="sidebarModeLabel">Física</strong>
+                </div>
+
+                <div class="tool-group">
+                    <button type="button" class="tool-button" id="newChatButton">
+                        Nova conversa
+                    </button>
+
+                    <button type="button" class="tool-button soon-button">
+                        Salvar conversa
+                    </button>
+
+                    <button type="button" class="tool-button soon-button">
+                        Exportar PDF
+                    </button>
+
+                    <button type="button" class="tool-button danger soon-button">
+                        Excluir conversa
+                    </button>
+                </div>
+            </nav>
+
             <div class="sidebar-footer">
                 <div class="sidebar-line"></div>
 
@@ -72,6 +97,8 @@
                             <h1>Thux-AI</h1>
                             <p id="modeSubtitle">modo Física</p>
                         </div>
+
+                        <div></div>
                     </header>
 
                     <section class="chat-panel" id="chatPanel"></section>

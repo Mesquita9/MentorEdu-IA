@@ -98,6 +98,7 @@ button {
     height: auto;
     object-fit: contain;
     filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.16));
+    transition: 0.2s ease;
 }
 
 .sidebar-footer {
@@ -124,6 +125,83 @@ button {
     font-size: 1.42rem;
     font-weight: 950;
     letter-spacing: -0.06em;
+}
+
+/* SIDEBAR NO MODO CHAT */
+
+.teacher-tools {
+    padding: 12px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.active-mode-box {
+    padding: 15px 16px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.active-mode-box span {
+    display: block;
+    margin-bottom: 4px;
+    color: rgba(0, 0, 0, 0.48);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.active-mode-box strong {
+    color: #171717;
+    font-size: 1.35rem;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+}
+
+.tool-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.tool-button {
+    height: 42px;
+    padding: 0 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.38);
+    color: #1d1d1d;
+    text-align: left;
+    font-weight: 850;
+    cursor: pointer;
+    transition: 0.16s ease;
+}
+
+.tool-button:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.58);
+}
+
+.tool-button.danger {
+    color: #721f1f;
+}
+
+.sidebar.chat-active .sidebar-logo {
+    width: 218px;
+}
+
+.sidebar.chat-active .sidebar-logo-area {
+    padding-top: 24px;
+}
+
+.sidebar.chat-active .dev-credit {
+    opacity: 0.48;
+}
+
+.sidebar.chat-active .sidebar-line {
+    opacity: 0.55;
 }
 
 /* ÁREA PRINCIPAL */
