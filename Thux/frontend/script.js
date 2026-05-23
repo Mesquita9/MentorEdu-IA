@@ -3,8 +3,12 @@ const messageInput = document.getElementById("messageInput");
 const sendButton = document.getElementById("sendButton");
 const plusButton = document.getElementById("plusButton");
 const plusMenu = document.getElementById("plusMenu");
+const modeSubtitle = document.getElementById("modeSubtitle");
+const newChatButton = document.getElementById("newChatButton");
+const toast = document.getElementById("toast");
 
 let isSending = false;
+let selectedDiscipline = "Física";
 
 plusButton.addEventListener("click", () => {
     plusMenu.classList.toggle("open");
@@ -17,6 +21,37 @@ document.addEventListener("click", (event) => {
     if (!clickedInsideMenu && !clickedPlusButton) {
         plusMenu.classList.remove("open");
     }
+});
+
+document.querySelectorAll(".mode-button").forEach((button) => {
+    button.addEventListener("click", () => {
+        const mode = button.dataset.mode;
+
+        selectedDiscipline = mode;
+
+        document.querySelectorAll(".mode-button").forEach((item) => {
+            item.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        modeSubtitle.textContent =
+            mode === "Física"
+                ? "modo Física · reprogramando o ensino da física"
+                : "modo Matemática · apoio para demonstrações e dúvidas";
+
+        startNewChat();
+    });
+});
+
+document.querySelectorAll(".soon-button").forEach((button) => {
+    button.addEventListener("click", () => {
+        showToast("Função planejada para a próxima versão.");
+    });
+});
+
+newChatButton.addEventListener("click", () => {
+    startNewChat();
 });
 
 sendButton.addEventListener("click", sendMessage);
@@ -33,8 +68,31 @@ messageInput.addEventListener("input", () => {
     messageInput.style.height = `${Math.min(messageInput.scrollHeight, 150)}px`;
 });
 
+function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2200);
+}
+
 function scrollToBottom() {
     chatPanel.scrollTop = chatPanel.scrollHeight;
+}
+
+function getIntroMessage() {
+    if (selectedDiscipline === "Física") {
+        return "Modo Física ativado.\nPronto para demonstrações, dúvidas e exemplos de aula.";
+    }
+
+    return "Modo Matemática ativado.\nPronto para funções, conjuntos, gráficos e exercícios.";
+}
+
+function startNewChat() {
+    chatPanel.innerHTML = "";
+    addMessage(getIntroMessage(), "thux");
+    messageInput.focus();
 }
 
 function addMessage(content, type, options = {}) {
@@ -124,6 +182,7 @@ async function sendMessage() {
             },
             body: JSON.stringify({
                 message: message,
+                discipline: selectedDiscipline,
             }),
         });
 
@@ -133,7 +192,8 @@ async function sendMessage() {
 
         const data = await response.json();
 
-        loadingContent.textContent = data.response || "Recebi uma resposta vazia do servidor.";
+        loadingContent.textContent =
+            data.response || "Recebi uma resposta vazia do servidor.";
     } catch (error) {
         console.error(error);
         loadingContent.textContent = getFriendlyErrorMessage();
@@ -144,8 +204,4 @@ async function sendMessage() {
     }
 }
 
-/*
-    Mensagem inicial.
-    Ela é criada pelo JS para ficar igual às outras mensagens do chat.
-*/
-addMessage("Fala, mestre.\nManda o B.O. de hoje.", "thux");
+startNewChat();

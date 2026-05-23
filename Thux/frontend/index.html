@@ -20,15 +20,62 @@
                 />
             </div>
 
+            <nav class="sidebar-panel">
+                <div class="sidebar-section">
+                    <span class="section-label">Modo de aula</span>
+
+                    <div class="mode-buttons">
+                        <button class="mode-button active" data-mode="Física">
+                            <span>Física</span>
+                        </button>
+
+                        <button class="mode-button" data-mode="Matemática">
+                            <span>Matemática</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <span class="section-label">Conversas</span>
+
+                    <button class="side-action" id="newChatButton">
+                        Nova conversa
+                    </button>
+
+                    <button class="side-action soon-button">
+                        Salvar conversa
+                    </button>
+
+                    <button class="side-action soon-button">
+                        Exportar PDF
+                    </button>
+
+                    <button class="side-action danger soon-button">
+                        Excluir conversa
+                    </button>
+                </div>
+
+                <div class="sidebar-section history-preview">
+                    <span class="section-label">Histórico</span>
+
+                    <div class="history-group">
+                        <strong>Física</strong>
+                        <p>Aula atual</p>
+                    </div>
+
+                    <div class="history-group muted-history">
+                        <strong>Matemática</strong>
+                        <p>Nenhuma conversa aberta</p>
+                    </div>
+                </div>
+            </nav>
+
             <div class="sidebar-footer">
                 <div class="sidebar-line"></div>
 
-                <div class="profile-area">
-                    <div class="profile-icon">
-                        <span></span>
-                    </div>
-
-                    <strong>Mesquita</strong>
+                <div class="dev-credit">
+                    <span>Desenvolvido por</span>
+                    <strong>Iago Mesquita</strong>
                 </div>
             </div>
         </aside>
@@ -38,7 +85,7 @@
                 <header class="chat-header">
                     <h1>Thux-AI</h1>
                     <div class="header-glow"></div>
-                    <p>reprogramando o ensino da física</p>
+                    <p id="modeSubtitle">modo Física · reprogramando o ensino da física</p>
                 </header>
 
                 <section class="chat-panel" id="chatPanel"></section>
@@ -59,11 +106,13 @@
                     </button>
 
                     <div class="plus-menu" id="plusMenu">
-                        <button type="button">Enviar PDF</button>
-                        <button type="button">Enviar imagem</button>
-                        <button type="button">Enviar anotação</button>
+                        <button type="button" class="soon-button">Enviar PDF</button>
+                        <button type="button" class="soon-button">Enviar imagem</button>
+                        <button type="button" class="soon-button">Enviar anotação</button>
                     </div>
                 </footer>
+
+                <div class="toast" id="toast"></div>
             </div>
         </section>
     </main>
