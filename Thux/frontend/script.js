@@ -29,7 +29,7 @@ messageInput.addEventListener("keydown", (event) => {
 });
 
 messageInput.addEventListener("input", () => {
-    messageInput.style.height = "64px";
+    messageInput.style.height = "62px";
     messageInput.style.height = `${Math.min(messageInput.scrollHeight, 150)}px`;
 });
 
@@ -108,7 +108,7 @@ async function sendMessage() {
     addMessage(message, "user");
 
     messageInput.value = "";
-    messageInput.style.height = "64px";
+    messageInput.style.height = "62px";
     plusMenu.classList.remove("open");
 
     const loadingMessage = createLoadingMessage();
@@ -143,3 +143,9 @@ async function sendMessage() {
         scrollToBottom();
     }
 }
+
+/*
+    Mensagem inicial.
+    Ela é criada pelo JS para ficar igual às outras mensagens do chat.
+*/
+addMessage("Fala, mestre.\nManda o B.O. de hoje.", "thux");
