@@ -3,10 +3,11 @@ Rotas de chat do Thux.
 
 Recebe mensagens do frontend e envia para o cérebro do Thux.
 
-Fluxo:
-- se for conversa casual, responde localmente rápido;
-- se for pergunta de estudo, tenta usar biblioteca;
-- se a biblioteca falhar, usa chat básico como fallback.
+Ideia:
+- o usuário não precisa falar de um jeito específico;
+- mensagens casuais ou vagas vão para o Thux normal;
+- perguntas de estudo vão para a biblioteca;
+- se a biblioteca falhar, usa o Thux normal como fallback.
 """
 
 from fastapi import APIRouter, Request
@@ -34,14 +35,21 @@ def extract_user_message(data: dict) -> str:
     return str(user_message).strip()
 
 
-def is_casual_message(message: str) -> bool:
+def is_likely_study_question(message: str) -> bool:
     """
-    Detecta mensagens simples que não precisam consultar biblioteca.
+    Decide se a mensagem parece uma pergunta de estudo.
+
+    Importante:
+    - Isso não deve exigir que o usuário fale bonito.
+    - A função só tenta evitar usar biblioteca em conversa casual.
     """
 
-    normalized = message.strip().lower()
+    text = message.strip().lower()
 
-    casual_messages = {
+    if not text:
+        return False
+
+    casual_exact_messages = {
         "oi",
         "olá",
         "ola",
@@ -49,36 +57,108 @@ def is_casual_message(message: str) -> bool:
         "eai",
         "e aí",
         "fala",
-        "fala ai",
-        "fala aí",
+        "salve",
+        "coe",
         "bom dia",
         "boa tarde",
         "boa noite",
-        "salve",
-        "coe",
-        "ei",
-        "hey",
-        "hello",
-        "hi",
-        "fala, krl",
-        "fala krl",
+        "tudo bom",
+        "tudo bom?",
+        "td bom",
+        "td bom?",
+        "blz",
+        "beleza",
+        "como vai",
+        "como vai?",
+        "testando",
+        "teste",
     }
 
-    if normalized in casual_messages:
+    if text in casual_exact_messages:
+        return False
+
+    casual_fragments = [
+        "tudo bem",
+        "tudo bom",
+        "como você está",
+        "como vc ta",
+        "como vc tá",
+        "bom dia",
+        "boa tarde",
+        "boa noite",
+    ]
+
+    for fragment in casual_fragments:
+        if fragment in text and len(text) < 80:
+            return False
+
+    study_keywords = [
+        "explique",
+        "explica",
+        "me explica",
+        "não entendi",
+        "nao entendi",
+        "o que é",
+        "o que e",
+        "como funciona",
+        "como resolver",
+        "resolva",
+        "calcule",
+        "calcular",
+        "defina",
+        "definição",
+        "definicao",
+        "exemplo",
+        "exemplos",
+        "exercício",
+        "exercicio",
+        "questão",
+        "questao",
+        "prova",
+        "atividade",
+        "matemática",
+        "matematica",
+        "física",
+        "fisica",
+        "química",
+        "quimica",
+        "função",
+        "funcao",
+        "domínio",
+        "dominio",
+        "imagem",
+        "conjunto",
+        "força",
+        "forca",
+        "energia",
+        "velocidade",
+        "aceleração",
+        "aceleracao",
+        "inércia",
+        "inercia",
+        "newton",
+        "ligação",
+        "ligacao",
+        "covalente",
+        "iônica",
+        "ionica",
+        "sigma",
+        "pi",
+    ]
+
+    for keyword in study_keywords:
+        if keyword in text:
+            return True
+
+    # Perguntas longas normalmente têm intenção real, mesmo com erro de digitação.
+    if len(text) >= 80 and "?" in text:
         return True
 
-    if len(normalized) <= 4 and not any(char.isdigit() for char in normalized):
-        return True
+    # Frases muito curtas e vagas não devem chamar biblioteca.
+    if len(text) <= 30:
+        return False
 
     return False
-
-
-def answer_casual_message(message: str) -> str:
-    """
-    Resposta local rápida para não gastar API nem consultar Drive.
-    """
-
-    return "Fala, mestre. Manda o B.O. de hoje."
 
 
 @router.post("/chat")
@@ -104,9 +184,18 @@ async def chat(request: Request):
             "response": "A mensagem veio vazia, pai."
         }
 
-    if is_casual_message(user_message):
+    if not is_likely_study_question(user_message):
+        try:
+            response = ask_thux(user_message)
+
+        except Exception as basic_error:
+            print("\nAviso: falha no chat básico do Thux.")
+            print(f"Erro: {basic_error}\n")
+
+            response = "Fala, mestre. Manda o B.O. de hoje."
+
         return {
-            "response": answer_casual_message(user_message)
+            "response": response
         }
 
     try:
