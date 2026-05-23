@@ -30,61 +30,76 @@
             </div>
         </aside>
 
-        <section class="chat-area">
-            <div class="chat-shell">
-                <header class="chat-header">
-                    <h1>Thux-AI</h1>
-                    <div class="header-glow"></div>
-                    <p id="modeSubtitle">reprogramando o ensino da física</p>
-                </header>
-
+        <section class="main-area">
+            <div class="main-shell">
                 <section class="start-screen" id="startScreen">
-                    <div class="start-card">
-                        <span class="start-kicker">Modo de aula</span>
+                    <div class="start-left">
+                        <div class="start-badge">Painel de aula</div>
 
-                        <h2>O que vamos conduzir hoje?</h2>
+                        <h1>O que vamos conduzir hoje?</h1>
 
                         <p>
                             Escolha a frente da aula para o Thux entrar no contexto certo.
                         </p>
 
-                        <div class="discipline-grid">
-                            <button class="discipline-card" data-mode="Física">
-                                <strong>Física</strong>
-                                <span>Demonstrações, problemas e dúvidas ao vivo.</span>
+                        <div class="choice-stack">
+                            <button class="choice-button" data-mode="Física">
+                                <span>Física</span>
                             </button>
 
-                            <button class="discipline-card" data-mode="Matemática">
-                                <strong>Matemática</strong>
-                                <span>Funções, gráficos, conjuntos e exercícios.</span>
+                            <button class="choice-button" data-mode="Matemática">
+                                <span>Matemática</span>
                             </button>
                         </div>
                     </div>
+
+                    <div class="start-right">
+                        <img
+                            src="/frontend/assets/thux-logo.png"
+                            alt="Thux-AI"
+                            class="hero-logo"
+                        />
+                    </div>
                 </section>
 
-                <section class="chat-panel hidden" id="chatPanel"></section>
+                <section class="chat-screen hidden" id="chatScreen">
+                    <header class="chat-header">
+                        <button type="button" class="back-button" id="backButton">
+                            ← trocar modo
+                        </button>
 
-                <footer class="chat-input-area hidden" id="chatInputArea">
-                    <button type="button" class="plus-button" id="plusButton">
-                        +
-                    </button>
+                        <div class="chat-title-area">
+                            <h1>Thux-AI</h1>
+                            <p id="modeSubtitle">modo Física</p>
+                        </div>
+                    </header>
 
-                    <textarea
-                        id="messageInput"
-                        placeholder="Digite sua mensagem..."
-                        rows="1"
-                    ></textarea>
+                    <section class="chat-panel" id="chatPanel"></section>
 
-                    <button type="button" class="send-button" id="sendButton">
-                        ➤
-                    </button>
+                    <footer class="chat-input-area">
+                        <button type="button" class="plus-button" id="plusButton">
+                            +
+                        </button>
 
-                    <div class="plus-menu" id="plusMenu">
-                        <button type="button">Salvar conversa</button>
-                        <button type="button">Exportar PDF</button>
-                        <button type="button">Nova conversa</button>
-                    </div>
-                </footer>
+                        <textarea
+                            id="messageInput"
+                            placeholder="Digite sua mensagem..."
+                            rows="1"
+                        ></textarea>
+
+                        <button type="button" class="send-button" id="sendButton">
+                            ➤
+                        </button>
+
+                        <div class="plus-menu" id="plusMenu">
+                            <button type="button" class="soon-button">Salvar conversa</button>
+                            <button type="button" class="soon-button">Exportar PDF</button>
+                            <button type="button" class="soon-button">Excluir conversa</button>
+                        </div>
+                    </footer>
+                </section>
+
+                <div class="toast" id="toast"></div>
             </div>
         </section>
     </main>

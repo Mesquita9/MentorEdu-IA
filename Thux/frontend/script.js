@@ -1,20 +1,28 @@
+const startScreen = document.getElementById("startScreen");
+const chatScreen = document.getElementById("chatScreen");
 const chatPanel = document.getElementById("chatPanel");
 const messageInput = document.getElementById("messageInput");
 const sendButton = document.getElementById("sendButton");
 const plusButton = document.getElementById("plusButton");
 const plusMenu = document.getElementById("plusMenu");
-const startScreen = document.getElementById("startScreen");
-const chatInputArea = document.getElementById("chatInputArea");
 const modeSubtitle = document.getElementById("modeSubtitle");
+const backButton = document.getElementById("backButton");
+const toast = document.getElementById("toast");
 
 let isSending = false;
 let selectedDiscipline = null;
 
-document.querySelectorAll(".discipline-card").forEach((button) => {
+document.querySelectorAll(".choice-button").forEach((button) => {
     button.addEventListener("click", () => {
         selectedDiscipline = button.dataset.mode;
         openClassMode(selectedDiscipline);
     });
+});
+
+backButton.addEventListener("click", () => {
+    chatScreen.classList.add("hidden");
+    startScreen.classList.remove("hidden");
+    selectedDiscipline = null;
 });
 
 plusButton.addEventListener("click", () => {
@@ -28,6 +36,12 @@ document.addEventListener("click", (event) => {
     if (!clickedInsideMenu && !clickedPlusButton) {
         plusMenu.classList.remove("open");
     }
+});
+
+document.querySelectorAll(".soon-button").forEach((button) => {
+    button.addEventListener("click", () => {
+        showToast("Função planejada para a próxima versão.");
+    });
 });
 
 sendButton.addEventListener("click", sendMessage);
@@ -44,10 +58,18 @@ messageInput.addEventListener("input", () => {
     messageInput.style.height = `${Math.min(messageInput.scrollHeight, 150)}px`;
 });
 
+function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2200);
+}
+
 function openClassMode(mode) {
     startScreen.classList.add("hidden");
-    chatPanel.classList.remove("hidden");
-    chatInputArea.classList.remove("hidden");
+    chatScreen.classList.remove("hidden");
 
     modeSubtitle.textContent =
         mode === "Física"
