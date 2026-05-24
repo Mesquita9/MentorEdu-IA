@@ -133,11 +133,11 @@ button {
     padding: 12px 26px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
 }
 
 .active-mode-box {
-    padding: 15px 16px;
+    padding: 14px 15px;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.42);
     border: 1px solid rgba(0, 0, 0, 0.08);
@@ -147,7 +147,7 @@ button {
     display: block;
     margin-bottom: 4px;
     color: rgba(0, 0, 0, 0.48);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -155,9 +155,10 @@ button {
 
 .active-mode-box strong {
     color: #171717;
-    font-size: 1.35rem;
+    font-size: 1.08rem;
     font-weight: 950;
-    letter-spacing: -0.05em;
+    letter-spacing: -0.04em;
+    line-height: 1.08;
 }
 
 .tool-group {
@@ -342,6 +343,103 @@ button {
     50% {
         transform: translateY(-8px);
     }
+}
+
+/* TELA DE FUNÇÕES */
+
+.function-screen {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 58px 64px;
+}
+
+.function-card {
+    width: min(920px, 100%);
+    padding: 36px;
+    border-radius: 32px;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035)),
+        #282828;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 28px 64px rgba(0,0,0,0.32);
+}
+
+.back-to-start {
+    margin-bottom: 20px;
+    padding: 8px 13px;
+    border: none;
+    border-radius: 999px;
+    color: rgba(255,255,255,0.72);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 0.8rem;
+    font-weight: 850;
+}
+
+.back-to-start:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+}
+
+.function-card h2 {
+    margin-bottom: 8px;
+    color: #f6f6f6;
+    font-size: clamp(2rem, 4vw, 3.6rem);
+    line-height: 1;
+    letter-spacing: -0.07em;
+    font-weight: 950;
+}
+
+.function-card p {
+    max-width: 620px;
+    margin-bottom: 28px;
+    color: rgba(255,255,255,0.6);
+    font-size: 1rem;
+    line-height: 1.45;
+}
+
+.function-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.function-button {
+    min-height: 112px;
+    padding: 20px;
+    border: none;
+    border-radius: 22px;
+    text-align: left;
+    color: #f5f5f5;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035)),
+        #303030;
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: 0.16s ease;
+}
+
+.function-button:hover {
+    transform: translateY(-2px);
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.045)),
+        #343434;
+}
+
+.function-button strong {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 1.15rem;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+}
+
+.function-button span {
+    display: block;
+    color: rgba(255,255,255,0.58);
+    font-size: 0.9rem;
+    line-height: 1.35;
 }
 
 /* CHAT */
@@ -697,6 +795,18 @@ textarea:disabled {
 
     .choice-button {
         min-width: min(100%, 340px);
+    }
+
+    .function-screen {
+        padding: 28px 18px;
+    }
+
+    .function-card {
+        padding: 24px;
+    }
+
+    .function-grid {
+        grid-template-columns: 1fr;
     }
 
     .chat-header {

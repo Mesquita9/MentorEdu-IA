@@ -23,7 +23,12 @@
             <nav class="teacher-tools hidden" id="teacherTools">
                 <div class="active-mode-box">
                     <span>Modo de aula</span>
-                    <strong id="sidebarModeLabel">Física</strong>
+                    <strong id="sidebarDisciplineLabel">Física</strong>
+                </div>
+
+                <div class="active-mode-box">
+                    <span>Função</span>
+                    <strong id="sidebarFunctionLabel">Demonstrar conceito</strong>
                 </div>
 
                 <div class="tool-group">
@@ -57,6 +62,7 @@
 
         <section class="main-area">
             <div class="main-shell">
+                <!-- Tela 1: escolha da matéria -->
                 <section class="start-screen" id="startScreen">
                     <div class="start-left">
                         <div class="start-badge">Painel de aula</div>
@@ -68,11 +74,11 @@
                         </p>
 
                         <div class="choice-stack">
-                            <button class="choice-button" data-mode="Física">
+                            <button class="choice-button discipline-choice" data-discipline="Física">
                                 <span>Física</span>
                             </button>
 
-                            <button class="choice-button" data-mode="Matemática">
+                            <button class="choice-button discipline-choice" data-discipline="Matemática">
                                 <span>Matemática</span>
                             </button>
                         </div>
@@ -87,6 +93,26 @@
                     </div>
                 </section>
 
+                <!-- Tela 2: escolha da função -->
+                <section class="function-screen hidden" id="functionScreen">
+                    <div class="function-card">
+                        <button type="button" class="back-to-start" id="backToStartButton">
+                            ← voltar
+                        </button>
+
+                        <span class="start-badge">Função de aula</span>
+
+                        <h2 id="functionTitle">Como o Thux vai ajudar?</h2>
+
+                        <p id="functionDescription">
+                            Escolha uma função para orientar a resposta, a biblioteca e o formato da aula.
+                        </p>
+
+                        <div class="function-grid" id="functionGrid"></div>
+                    </div>
+                </section>
+
+                <!-- Tela 3: chat -->
                 <section class="chat-screen hidden" id="chatScreen">
                     <header class="chat-header">
                         <button type="button" class="back-button" id="backButton">
