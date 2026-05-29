@@ -764,7 +764,7 @@ function exportCurrentConversationAsPdf() {
                     <strong>Título:</strong> ${escapeHtml(conversation.title)}<br />
                     <strong>Criada em:</strong> ${escapeHtml(createdAt)}<br />
                     <strong>Atualizada em:</strong> ${escapeHtml(updatedAt)}<br />
-                    <strong>Desenvolvido por:</strong> Iago Mesquita
+                    <strong>Desenvolvido por:</strong> Mesquita
                 </div>
             </section>
 
