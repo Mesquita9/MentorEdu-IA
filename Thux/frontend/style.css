@@ -837,3 +837,39 @@ textarea:disabled {
         padding: 15px 18px;
     }
 }
+
+/* AJUSTES PARA NAVEGAÇÃO POR ÁREAS */
+
+.function-card {
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+}
+
+.function-card::-webkit-scrollbar {
+    width: 8px;
+}
+
+.function-card::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.function-card::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+}
+
+.function-button.area-button {
+    min-height: 96px;
+}
+
+.function-button.tool-button-card {
+    min-height: 104px;
+}
+
+.function-button.soon-mode {
+    opacity: 0.68;
+}
+
+.function-button.soon-mode:hover {
+    opacity: 0.9;
+}

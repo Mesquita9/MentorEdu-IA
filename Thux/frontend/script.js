@@ -29,58 +29,144 @@ const STORAGE_KEY = "thux_conversations_v1";
 
 let isSending = false;
 let selectedDiscipline = null;
+let selectedArea = null;
 let selectedLessonMode = null;
 let currentConversationId = null;
 let conversations = loadConversations();
 
-const lessonModes = {
-    "Física": [
-        {
-            title: "Demonstrar conceito",
-            description: "Explicar ideias físicas com exemplos de aula.",
-        },
-        {
-            title: "Criar/resolver questão",
-            description: "Gerar ou resolver problemas passo a passo.",
-        },
-        {
-            title: "Modo prova/demonstração",
-            description: "Deduzir fórmulas e justificar cada passagem.",
-        },
-        {
-            title: "Buscar vídeo da biblioteca",
-            description: "Encontrar cenas e vídeos para explicar Física com jogos.",
-        },
+const mathAreas = [
+    {
+        title: "Conjuntos e funções",
+        description: "Conjuntos, relações, domínio, imagem, funções e gráficos iniciais.",
+        libraryId: "matematica_conjuntos_funcoes_001",
+    },
+    {
+        title: "Logaritmos",
+        description: "Definição, propriedades, equações logarítmicas e aplicações.",
+        libraryId: "matematica_logaritmos_001",
+    },
+    {
+        title: "Trigonometria",
+        description: "Razões trigonométricas, ciclo, identidades e funções trigonométricas.",
+        libraryId: "matematica_trigonometria_001",
+    },
+    {
+        title: "Sequências, matrizes e sistemas",
+        description: "Progressões, matrizes, determinantes e sistemas lineares.",
+        libraryId: "matematica_sequencias_matrizes_sistemas_001",
+    },
+    {
+        title: "Combinatória e probabilidade",
+        description: "Contagem, arranjos, combinações, permutações e probabilidade.",
+        libraryId: "matematica_combinatoria_probabilidade_001",
+    },
+    {
+        title: "Complexos e polinômios",
+        description: "Números complexos, equações polinomiais e propriedades algébricas.",
+        libraryId: "matematica_complexos_polinomios_001",
+    },
+    {
+        title: "Geometria analítica",
+        description: "Plano cartesiano, reta, circunferência, cônicas e distância.",
+        libraryId: "matematica_geometria_analitica_001",
+    },
+    {
+        title: "Limites, derivadas e integral",
+        description: "Noções iniciais de cálculo: limites, derivadas e integrais.",
+        libraryId: "matematica_limites_derivadas_integral_001",
+    },
+    {
+        title: "Geometria plana",
+        description: "Ângulos, polígonos, circunferência, áreas e relações métricas.",
+        libraryId: "matematica_geometria_plana_001",
+    },
+    {
+        title: "Geometria espacial",
+        description: "Prismas, pirâmides, cilindros, cones, esferas, áreas e volumes.",
+        libraryId: "matematica_geometria_espacial_001",
+    },
+    {
+        title: "Financeira e estatística",
+        description: "Porcentagem, juros, médias, gráficos estatísticos e análise de dados.",
+        libraryId: "matematica_financeira_estatistica_001",
+    },
+];
+
+const defaultStudyTools = [
+    {
+        title: "Explicar conceito",
+        description: "Explicar a teoria com base no material cadastrado da área.",
+    },
+    {
+        title: "Resolver questão",
+        description: "Resolver uma questão passo a passo usando a base correta.",
+    },
+    {
+        title: "Modo prova/demonstração",
+        description: "Justificar propriedades, fórmulas e passagens com mais rigor.",
+    },
+    {
+        title: "Buscar referência no livro",
+        description: "Procurar trecho, página ou definição no material da biblioteca.",
+    },
+];
+
+const graphTool = {
+    title: "Gerar gráfico",
+    description: "Criar e analisar gráficos com pontos, raízes, vértice e comportamento.",
+};
+
+const sectionTools = {
+    "Planejamento": [
         {
             title: "Planejar aula",
-            description: "Organizar explicação, perguntas, exemplos e atividade.",
+            description: "Criar uma sequência didática com objetivos, explicação e atividade.",
+        },
+        {
+            title: "Criar lista de exercícios",
+            description: "Montar uma lista por tema, nível e objetivo da aula.",
+        },
+        {
+            title: "Criar avaliação",
+            description: "Gerar uma avaliação com questões, critérios e gabarito.",
+        },
+        {
+            title: "Roteiro de demonstração",
+            description: "Planejar uma demonstração prática ou visual para sala.",
         },
     ],
 
-    "Matemática": [
+    "Física": [
         {
-            title: "Funções e álgebra",
-            description: "Trabalhar funções, equações, domínio, imagem e gráficos.",
+            title: "Mecânica básica",
+            description: "Trabalhar conceitos iniciais de movimento, força, energia e leis de Newton.",
         },
         {
-            title: "Geometria",
-            description: "Explorar figuras, áreas, volumes, ângulos e relações.",
+            title: "Resolver questão",
+            description: "Resolver problemas de Física passo a passo, com unidades e interpretação.",
         },
         {
-            title: "Criar/resolver exercício",
-            description: "Gerar ou resolver exercícios com passo a passo.",
+            title: "Demonstrar conceito",
+            description: "Explicar conceitos físicos com analogias, exemplos e linguagem de aula.",
         },
         {
-            title: "Modo prova/demonstração",
-            description: "Demonstrar fórmulas, propriedades e resultados.",
+            title: "Buscar vídeo da biblioteca",
+            description: "Encontrar vídeos, cenas ou gravações organizadas por tema.",
+        },
+    ],
+
+    "Linguagem": [
+        {
+            title: "Interpretação de questões",
+            description: "Ajudar a ler enunciados, comandos e pegadinhas de prova.",
         },
         {
-            title: "Gerar gráfico",
-            description: "Criar ou interpretar gráficos e representações visuais.",
+            title: "Símbolos matemáticos",
+            description: "Explicar símbolos como ∈, ∀, ∃, ⇒, ⇔, reticências e notações.",
         },
         {
-            title: "Planejar aula",
-            description: "Montar sequência didática, exemplos e fechamento.",
+            title: "Conectivos lógicos",
+            description: "Trabalhar 'se', 'somente se', 'se e somente se', negação e equivalências.",
         },
     ],
 };
@@ -95,10 +181,18 @@ document.querySelectorAll(".discipline-choice").forEach((button) => {
 backToStartButton.addEventListener("click", () => {
     saveCurrentConversation();
 
+    if (selectedDiscipline === "Matemática" && selectedArea) {
+        selectedArea = null;
+        selectedLessonMode = null;
+        renderMathAreas();
+        return;
+    }
+
     functionScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
 
     selectedDiscipline = null;
+    selectedArea = null;
     selectedLessonMode = null;
     currentConversationId = null;
 
@@ -119,6 +213,12 @@ backButton.addEventListener("click", () => {
     chatPanel.innerHTML = "";
 
     resetChatUiState();
+
+    if (selectedDiscipline === "Matemática" && selectedArea) {
+        renderMathTools(selectedArea);
+    } else {
+        renderSectionTools(selectedDiscipline);
+    }
 });
 
 newChatButton.addEventListener("click", () => {
@@ -204,31 +304,35 @@ function generateId() {
     return `conv-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
 
-function getModeKey(discipline, lessonMode) {
-    return `${discipline}::${lessonMode}`;
+function getModeKey(discipline, area, lessonMode) {
+    return `${discipline}::${area || "geral"}::${lessonMode}`;
 }
 
 function getCurrentConversation() {
     return conversations.find((conversation) => conversation.id === currentConversationId) || null;
 }
 
-function findLastConversationForMode(discipline, lessonMode) {
-    const modeKey = getModeKey(discipline, lessonMode);
+function findLastConversationForMode(discipline, area, lessonMode) {
+    const modeKey = getModeKey(discipline, area, lessonMode);
 
     return conversations
         .filter((conversation) => conversation.modeKey === modeKey)
         .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0] || null;
 }
 
-function createConversationObject(discipline, lessonMode) {
+function createConversationObject(discipline, area, lessonMode) {
     const now = new Date().toISOString();
+    const title = area
+        ? `${discipline} - ${area} - ${lessonMode}`
+        : `${discipline} - ${lessonMode}`;
 
     return {
         id: generateId(),
-        title: `${discipline} - ${lessonMode}`,
+        title,
         discipline,
+        area,
         lessonMode,
-        modeKey: getModeKey(discipline, lessonMode),
+        modeKey: getModeKey(discipline, area, lessonMode),
         messages: [],
         createdAt: now,
         updatedAt: now,
@@ -237,14 +341,19 @@ function createConversationObject(discipline, lessonMode) {
 
 function createNewConversation(showMessage = false) {
     if (!selectedDiscipline || !selectedLessonMode) {
-        showToast("Escolha uma matéria e uma função primeiro.");
+        showToast("Escolha uma área e uma função primeiro.");
         return;
     }
 
     saveCurrentConversation();
     resetChatUiState();
 
-    const conversation = createConversationObject(selectedDiscipline, selectedLessonMode);
+    const conversation = createConversationObject(
+        selectedDiscipline,
+        selectedArea,
+        selectedLessonMode
+    );
+
     conversations.push(conversation);
     currentConversationId = conversation.id;
 
@@ -337,32 +446,130 @@ function openFunctionScreen(discipline) {
     startScreen.classList.add("hidden");
     functionScreen.classList.remove("hidden");
 
-    functionTitle.textContent = `Como o Thux vai ajudar em ${discipline}?`;
+    selectedArea = null;
+    selectedLessonMode = null;
 
-    functionDescription.textContent =
-        discipline === "Física"
-            ? "Escolha uma função para orientar demonstrações, questões, vídeos e planejamento."
-            : "Escolha uma função para orientar conceitos, geometria, gráficos, exercícios e demonstrações.";
+    if (discipline === "Matemática") {
+        renderMathAreas();
+        return;
+    }
 
-    renderFunctionButtons(discipline);
+    renderSectionTools(discipline);
 }
 
-function renderFunctionButtons(discipline) {
+function renderMathAreas() {
+    backToStartButton.textContent = "← voltar";
+
+    functionTitle.textContent = "Qual área da Matemática vamos trabalhar?";
+
+    functionDescription.textContent =
+        "Escolha a área conforme os livros cadastrados na biblioteca. O Thux deve buscar primeiro no material correspondente.";
+
     functionGrid.innerHTML = "";
 
-    lessonModes[discipline].forEach((mode) => {
+    mathAreas.forEach((area) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.classList.add("function-button");
-        button.dataset.mode = mode.title;
+        button.classList.add("function-button", "area-button");
 
         button.innerHTML = `
-            <strong>${mode.title}</strong>
-            <span>${mode.description}</span>
+            <strong>${area.title}</strong>
+            <span>${area.description}</span>
         `;
 
         button.addEventListener("click", () => {
-            selectedLessonMode = mode.title;
+            selectedArea = area.title;
+            renderMathTools(area.title);
+        });
+
+        functionGrid.appendChild(button);
+    });
+}
+
+function renderMathTools(areaTitle) {
+    backToStartButton.textContent = "← áreas";
+
+    functionTitle.textContent = areaTitle;
+
+    functionDescription.textContent =
+        "Agora escolha como o Thux deve trabalhar essa área usando a biblioteca cadastrada.";
+
+    functionGrid.innerHTML = "";
+
+    const tools = getToolsForMathArea(areaTitle);
+
+    tools.forEach((tool) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.classList.add("function-button", "tool-button-card");
+
+        button.innerHTML = `
+            <strong>${tool.title}</strong>
+            <span>${tool.description}</span>
+        `;
+
+        button.addEventListener("click", () => {
+            selectedLessonMode = tool.title;
+            openChatScreen();
+        });
+
+        functionGrid.appendChild(button);
+    });
+}
+
+function getToolsForMathArea(areaTitle) {
+    const tools = [...defaultStudyTools];
+
+    const areasWithGraph = [
+        "Conjuntos e funções",
+        "Trigonometria",
+        "Geometria analítica",
+        "Limites, derivadas e integral",
+    ];
+
+    if (areasWithGraph.includes(areaTitle)) {
+        tools.splice(2, 0, graphTool);
+    }
+
+    return tools;
+}
+
+function renderSectionTools(discipline) {
+    backToStartButton.textContent = "← voltar";
+
+    functionTitle.textContent = `Como o Thux vai trabalhar ${discipline}?`;
+
+    if (discipline === "Planejamento") {
+        functionDescription.textContent =
+            "Ambiente para preparar aulas, listas, avaliações e roteiros fora do momento de sala.";
+    } else if (discipline === "Física") {
+        functionDescription.textContent =
+            "Escolha uma frente de Física. Por enquanto, vamos manter simples até a biblioteca de Física estar organizada.";
+    } else if (discipline === "Linguagem") {
+        functionDescription.textContent =
+            "Use Linguagem para interpretação de questões, símbolos matemáticos e conectivos lógicos.";
+    } else {
+        functionDescription.textContent =
+            "Escolha uma função para orientar a resposta do Thux.";
+    }
+
+    functionGrid.innerHTML = "";
+
+    const tools = sectionTools[discipline] || [];
+
+    tools.forEach((tool) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.classList.add("function-button", "tool-button-card");
+
+        button.innerHTML = `
+            <strong>${tool.title}</strong>
+            <span>${tool.description}</span>
+        `;
+
+        button.addEventListener("click", () => {
+            selectedArea = null;
+            selectedLessonMode = tool.title;
             openChatScreen();
         });
 
@@ -377,13 +584,21 @@ function openChatScreen() {
     sidebar.classList.add("chat-active");
     teacherTools.classList.remove("hidden");
 
-    sidebarDisciplineLabel.textContent = selectedDiscipline;
+    const activeContext = selectedArea
+        ? `${selectedDiscipline} · ${selectedArea}`
+        : selectedDiscipline;
+
+    sidebarDisciplineLabel.textContent = activeContext;
     sidebarFunctionLabel.textContent = selectedLessonMode;
-    modeSubtitle.textContent = `${selectedDiscipline} · ${selectedLessonMode}`;
+    modeSubtitle.textContent = `${activeContext} · ${selectedLessonMode}`;
 
     resetChatUiState();
 
-    const lastConversation = findLastConversationForMode(selectedDiscipline, selectedLessonMode);
+    const lastConversation = findLastConversationForMode(
+        selectedDiscipline,
+        selectedArea,
+        selectedLessonMode
+    );
 
     if (lastConversation) {
         currentConversationId = lastConversation.id;
@@ -503,6 +718,7 @@ async function sendMessage() {
             body: JSON.stringify({
                 message,
                 discipline: selectedDiscipline,
+                area: selectedArea,
                 lesson_mode: selectedLessonMode,
                 conversation_id: currentConversationId,
             }),
@@ -758,7 +974,7 @@ function exportCurrentConversationAsPdf() {
                 <div class="cover-badge">Relatório de conversa</div>
 
                 <h1>Thux-AI</h1>
-                <h2>${escapeHtml(conversation.discipline)} · ${escapeHtml(conversation.lessonMode)}</h2>
+                <h2>${escapeHtml(conversation.discipline)}${conversation.area ? " · " + escapeHtml(conversation.area) : ""} · ${escapeHtml(conversation.lessonMode)}</h2>
 
                 <div class="cover-meta">
                     <strong>Título:</strong> ${escapeHtml(conversation.title)}<br />
@@ -813,6 +1029,7 @@ function exportCurrentConversationAsPdf() {
 
     showToast("Prévia do PDF aberta.");
 }
+
 function buildMessagesHtml(conversation) {
     return conversation.messages.map((message) => {
         const label = message.role === "user" ? "Você" : "Thux";
@@ -839,6 +1056,7 @@ function buildConversationSummary(conversation) {
 
     return [
         `Disciplina: ${conversation.discipline}`,
+        conversation.area ? `Área: ${conversation.area}` : null,
         `Função: ${conversation.lessonMode}`,
         "",
         "Síntese provisória:",
@@ -849,7 +1067,7 @@ function buildConversationSummary(conversation) {
             : "Ainda não há resposta suficiente do Thux para gerar uma síntese mais detalhada.",
         "",
         "Observação: este resumo ainda é local e provisório. Futuramente será gerado pelo próprio Thux com base no conteúdo completo da conversa.",
-    ].join("\n");
+    ].filter(Boolean).join("\n");
 }
 
 function buildReferencesBlock(conversation) {
@@ -879,6 +1097,7 @@ function buildReferencesBlock(conversation) {
             "- nome do arquivo/PDF;",
             "- página consultada;",
             "- disciplina;",
+            "- área;",
             "- uso da fonte na resposta.",
         ].join("\n");
     }

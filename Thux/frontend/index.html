@@ -22,13 +22,13 @@
 
             <nav class="teacher-tools hidden" id="teacherTools">
                 <div class="active-mode-box">
-                    <span>Modo de aula</span>
-                    <strong id="sidebarDisciplineLabel">Física</strong>
+                    <span>Área</span>
+                    <strong id="sidebarDisciplineLabel">Matemática</strong>
                 </div>
 
                 <div class="active-mode-box">
                     <span>Função</span>
-                    <strong id="sidebarFunctionLabel">Demonstrar conceito</strong>
+                    <strong id="sidebarFunctionLabel">Explicar conceito</strong>
                 </div>
 
                 <div class="tool-group">
@@ -62,7 +62,7 @@
 
         <section class="main-area">
             <div class="main-shell">
-                <!-- Tela 1: escolha da matéria -->
+                <!-- Tela 1: escolha da área principal -->
                 <section class="start-screen" id="startScreen">
                     <div class="start-left">
                         <div class="start-badge">Painel de aula</div>
@@ -70,16 +70,24 @@
                         <h1>O que vamos conduzir hoje?</h1>
 
                         <p>
-                            Escolha a frente da aula para o Thux entrar no contexto certo.
+                            Escolha a área de trabalho para o Thux entrar no contexto certo.
                         </p>
 
                         <div class="choice-stack">
+                            <button class="choice-button discipline-choice" data-discipline="Planejamento">
+                                <span>Planejamento</span>
+                            </button>
+
                             <button class="choice-button discipline-choice" data-discipline="Física">
                                 <span>Física</span>
                             </button>
 
                             <button class="choice-button discipline-choice" data-discipline="Matemática">
                                 <span>Matemática</span>
+                            </button>
+
+                            <button class="choice-button discipline-choice" data-discipline="Linguagem">
+                                <span>Linguagem</span>
                             </button>
                         </div>
                     </div>
@@ -93,19 +101,19 @@
                     </div>
                 </section>
 
-                <!-- Tela 2: escolha da função -->
+                <!-- Tela 2: escolha de área/ferramenta -->
                 <section class="function-screen hidden" id="functionScreen">
                     <div class="function-card">
                         <button type="button" class="back-to-start" id="backToStartButton">
                             ← voltar
                         </button>
 
-                        <span class="start-badge">Função de aula</span>
+                        <span class="start-badge">Biblioteca e ferramentas</span>
 
                         <h2 id="functionTitle">Como o Thux vai ajudar?</h2>
 
                         <p id="functionDescription">
-                            Escolha uma função para orientar a resposta, a biblioteca e o formato da aula.
+                            Escolha uma área ou ferramenta para orientar a resposta, a biblioteca e o formato da aula.
                         </p>
 
                         <div class="function-grid" id="functionGrid"></div>
@@ -121,7 +129,7 @@
 
                         <div class="chat-title-area">
                             <h1>Thux-AI</h1>
-                            <p id="modeSubtitle">modo Física</p>
+                            <p id="modeSubtitle">modo Matemática</p>
                         </div>
 
                         <div></div>
@@ -165,6 +173,6 @@
         </section>
     </main>
 
-    <script src="/frontend/script.js?v=pdf-preview-001"></script>
+    <script src="/frontend/script.js?v=nav-biblioteca-001"></script>
 </body>
 </html>
