@@ -7,7 +7,8 @@ Ideia:
 - o usuário não precisa falar de um jeito específico;
 - mensagens casuais ou vagas vão para o Thux normal;
 - perguntas de estudo vão para a biblioteca;
-- se a biblioteca falhar, usa o Thux normal como fallback.
+- se a biblioteca falhar, usa o Thux normal como fallback;
+- o frontend pode enviar disciplina e função de aula para orientar a resposta.
 """
 
 from fastapi import APIRouter, Request
@@ -33,6 +34,58 @@ def extract_user_message(data: dict) -> str:
         return ""
 
     return str(user_message).strip()
+
+
+def extract_lesson_context(data: dict) -> dict:
+    """
+    Extrai o contexto do painel de aula enviado pelo frontend.
+    """
+
+    discipline = data.get("discipline")
+    lesson_mode = data.get("lesson_mode") or data.get("mode")
+    conversation_id = data.get("conversation_id")
+
+    return {
+        "discipline": str(discipline).strip() if discipline else None,
+        "lesson_mode": str(lesson_mode).strip() if lesson_mode else None,
+        "conversation_id": str(conversation_id).strip() if conversation_id else None,
+    }
+
+
+def build_contextual_message(user_message: str, lesson_context: dict) -> str:
+    """
+    Junta a mensagem do usuário com o modo pedagógico escolhido na interface.
+
+    Isso não substitui o prompt principal do Thux.
+    Serve para avisar ao cérebro qual painel/função está ativo.
+    """
+
+    discipline = lesson_context.get("discipline")
+    lesson_mode = lesson_context.get("lesson_mode")
+
+    if not discipline and not lesson_mode:
+        return user_message
+
+    context_lines = [
+        "Contexto do painel do Thux-AI:",
+    ]
+
+    if discipline:
+        context_lines.append(f"- Disciplina ativa: {discipline}")
+
+    if lesson_mode:
+        context_lines.append(f"- Função de aula ativa: {lesson_mode}")
+
+    context_lines.extend([
+        "",
+        "Use esse contexto para adaptar o formato da resposta.",
+        "Não diga que recebeu um contexto técnico do sistema.",
+        "Responda naturalmente ao usuário.",
+        "",
+        f"Mensagem do usuário: {user_message}",
+    ])
+
+    return "\n".join(context_lines)
 
 
 def is_likely_study_question(message: str) -> bool:
@@ -150,11 +203,9 @@ def is_likely_study_question(message: str) -> bool:
         if keyword in text:
             return True
 
-    # Perguntas longas normalmente têm intenção real, mesmo com erro de digitação.
     if len(text) >= 80 and "?" in text:
         return True
 
-    # Frases muito curtas e vagas não devem chamar biblioteca.
     if len(text) <= 30:
         return False
 
@@ -177,6 +228,8 @@ async def chat(request: Request):
         }
 
     user_message = extract_user_message(data)
+    lesson_context = extract_lesson_context(data)
+    contextual_message = build_contextual_message(user_message, lesson_context)
 
     if not user_message:
         return {
@@ -186,7 +239,7 @@ async def chat(request: Request):
 
     if not is_likely_study_question(user_message):
         try:
-            response = ask_thux(user_message)
+            response = ask_thux(contextual_message)
 
         except Exception as basic_error:
             print("\nAviso: falha no chat básico do Thux.")
@@ -195,21 +248,27 @@ async def chat(request: Request):
             response = "Fala, mestre. Manda o B.O. de hoje."
 
         return {
-            "response": response
+            "response": response,
+            "discipline": lesson_context.get("discipline"),
+            "lesson_mode": lesson_context.get("lesson_mode"),
+            "conversation_id": lesson_context.get("conversation_id"),
         }
 
     try:
-        response = ask_thux_with_knowledge(user_message)
+        response = ask_thux_with_knowledge(contextual_message)
 
     except Exception as knowledge_error:
         print("\nAviso: falha ao usar biblioteca do Thux.")
         print(f"Erro: {knowledge_error}")
         print("Usando resposta básica como fallback.\n")
 
-        response = ask_thux(user_message)
+        response = ask_thux(contextual_message)
 
     return {
-        "response": response
+        "response": response,
+        "discipline": lesson_context.get("discipline"),
+        "lesson_mode": lesson_context.get("lesson_mode"),
+        "conversation_id": lesson_context.get("conversation_id"),
     }
 
 

@@ -111,11 +111,6 @@ const defaultStudyTools = [
     },
 ];
 
-const graphTool = {
-    title: "Gerar gráfico",
-    description: "Criar e analisar gráficos com pontos, raízes, vértice e comportamento.",
-};
-
 const sectionTools = {
     "Planejamento": [
         {
@@ -518,20 +513,7 @@ function renderMathTools(areaTitle) {
 }
 
 function getToolsForMathArea(areaTitle) {
-    const tools = [...defaultStudyTools];
-
-    const areasWithGraph = [
-        "Conjuntos e funções",
-        "Trigonometria",
-        "Geometria analítica",
-        "Limites, derivadas e integral",
-    ];
-
-    if (areasWithGraph.includes(areaTitle)) {
-        tools.splice(2, 0, graphTool);
-    }
-
-    return tools;
+    return [...defaultStudyTools];
 }
 
 function renderSectionTools(discipline) {

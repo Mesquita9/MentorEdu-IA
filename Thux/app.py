@@ -13,18 +13,20 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from routes.chat import router as chat_router
+from routes.graph import router as graph_router
 
 
 # Criação da aplicação principal
 app = FastAPI(
     title="Thux-AI",
     description="Assistente pessoal didático focado em Física, Matemática e apoio docente.",
-    version="0.1.0"
+    version="0.1.0",
 )
 
 
-# Conecta as rotas de chat ao aplicativo principal
+# Conecta as rotas ao aplicativo principal
 app.include_router(chat_router)
+app.include_router(graph_router)
 
 
 # Entrega os arquivos estáticos da interface
@@ -32,7 +34,7 @@ app.include_router(chat_router)
 app.mount(
     "/frontend",
     StaticFiles(directory="frontend"),
-    name="frontend"
+    name="frontend",
 )
 
 
@@ -41,7 +43,7 @@ def home():
     """
     Rota inicial do sistema.
 
-    Agora ela entrega a interface visual do Thux.
+    Entrega a interface visual do Thux.
     """
     return FileResponse("frontend/index.html")
 
@@ -55,5 +57,5 @@ def health_check():
     """
     return {
         "status": "ok",
-        "service": "Thux-AI"
+        "service": "Thux-AI",
     }

@@ -14,8 +14,14 @@ pydantic
 # Leitura de PDFs
 pymupdf
 
+#Gerar gráficos
+matplotlib
+numpy
+sympy
+
 # Google Drive API
 google-api-python-client
 google-auth
 google-auth-httplib2
 google-auth-oauthlib
+
